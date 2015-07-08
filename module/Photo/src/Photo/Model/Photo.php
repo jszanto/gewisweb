@@ -119,6 +119,12 @@ class Photo implements ResourceInterface
     protected $largeThumbPath;
 
     /**
+     * all the detected faces in this photo.
+     * @ORM\OneToMany(targetEntity="Face", mappedBy="photo")
+     */
+    protected $faces;
+
+    /**
      * Get the ID.
      *
      * @return int
@@ -256,6 +262,16 @@ class Photo implements ResourceInterface
     public function getSmallThumbPath()
     {
         return $this->smallThumbPath;
+    }
+
+    /**
+     * Gets the faces in a photo
+     *
+     * @return array of /Photo/Model/Face
+     */
+    public function getFaces()
+    {
+        return $this->faces;
     }
 
     /**
