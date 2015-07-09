@@ -405,6 +405,15 @@ class Photo implements ResourceInterface
     }
 
     /**
+     * Adds a detected face to this photo
+     *
+     * @param \Photo\Model\Face $face
+     */
+    public function addFace($face) {
+        $face->setPhoto($this);
+        $this->faces[] = $face;
+    }
+    /**
      * Returns an associative array representation of this object
      *
      * @return array
