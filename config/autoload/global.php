@@ -72,7 +72,16 @@ return array(
             'cols' => 2,
             'rows' => 2,
             'background' => '#000000'
-        )
+        ),
+        'face_detect' => array(
+            'haarcascades_dir' => 'module/Photo/haarcascades/',
+            'haarcascades' => array(
+                'haarcascade_fontalface_alt.xml',
+            ),
+            'hue_threshold' => 50,
+            'saturation_threshold' => 175
+        ),
+
     ),
     
     /**
