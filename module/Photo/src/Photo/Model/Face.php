@@ -132,7 +132,7 @@ class Face implements ResourceInterface
     }
 
     /**
-     * @return /Photo/Model/Photo
+     * @return \Photo\Model\Photo
      */
     public function getPhoto()
     {
@@ -140,13 +140,26 @@ class Face implements ResourceInterface
     }
 
     /**
-     * @param /Photo/Model/Photo $photo
+     * @param \Photo/Model\Photo $photo
      */
     public function setPhoto($photo)
     {
         $this->photo = $photo;
     }
 
+    /**
+     * Allows constructing a Face from an assoc array
+     *
+     * @param array $array like ['x'=>x, 'y'=>y, 'w'=>w, 'h' => h]
+     * @return \Photo\Model\Photo
+     */
+    public static function fromArray($array) {
+        $face = new Face();
+        $face->x = $array['x'];
+        $face->y = $array['y'];
+        $face->width = $array['w'];
+        $face->height = $array['h'];
+    }
     /**
      * Returns the string identifier of the Resource
      *
