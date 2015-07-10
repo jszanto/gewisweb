@@ -120,7 +120,7 @@ class Photo implements ResourceInterface
 
     /**
      * all the detected faces in this photo.
-     * @ORM\OneToMany(targetEntity="Face", mappedBy="photo")
+     * @ORM\OneToMany(targetEntity="Face", mappedBy="photo", cascade={"persist"})
      */
     protected $faces;
 
