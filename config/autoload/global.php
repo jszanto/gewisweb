@@ -76,7 +76,7 @@ return array(
         'face_detect' => array(
             'haarcascades_dir' => 'module/Photo/haarcascades/',
             'haarcascades' => array(
-                'haarcascade_fontalface_alt.xml',
+                'haarcascade_frontalface_alt.xml',
             ),
             'hue_threshold' => 50,
             'saturation_threshold' => 175
