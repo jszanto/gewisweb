@@ -90,9 +90,9 @@ class Photo extends AbstractService
         if (is_null($photo)) {
             $photo = new PhotoModel();
             $photo->setAlbum($targetAlbum);
-            $photo = $this->getMetadataService()->populateMetaData($photo, $path);
             $photo->setPath($storagePath);
-
+            $photo = $this->getMetadataService()->populateMetaData($photo, $path);
+            $photo = $this->getFaceDetectionService()->populateFaces($photo, $path);
             //Create and set the storage paths for thumbnails.
             //Currently, the maximum sizes of the old website are used. These
             //values are dependant on the design.
@@ -374,6 +374,16 @@ class Photo extends AbstractService
     public function getMetadataService()
     {
         return $this->getServiceManager()->get('photo_service_metadata');
+    }
+
+    /**
+     * Gets the face detection service.
+     *
+     * @return \Photo\Service\FaceDetection
+     */
+    public function getFaceDetectionService()
+    {
+        return $this->getServiceManager()->get('photo_service_face_detection');
     }
 
     /**
