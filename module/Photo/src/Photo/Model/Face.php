@@ -159,6 +159,7 @@ class Face implements ResourceInterface
         $face->y = $array['y'];
         $face->width = $array['w'];
         $face->height = $array['h'];
+        return $face;
     }
     /**
      * Returns the string identifier of the Resource
