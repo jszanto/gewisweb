@@ -92,7 +92,7 @@ class Photo extends AbstractService
             $photo->setAlbum($targetAlbum);
             $photo->setPath($storagePath);
             $photo = $this->getMetadataService()->populateMetaData($photo, $path);
-            $photo = $this->getFaceDetectionService()->populateFaces($photo, $path);
+
             //Create and set the storage paths for thumbnails.
             //Currently, the maximum sizes of the old website are used. These
             //values are dependant on the design.
@@ -106,6 +106,8 @@ class Photo extends AbstractService
                 $config['small_thumb_size']['width'],
                 $config['small_thumb_size']['height']
             ));
+            //TODO: all of these operations need to be placed in the correct order some time
+            $photo = $this->getFaceDetectionService()->populateFaces($photo, $config['upload_dir'] . '/' . $photo->getLargeThumbPath());
             $mapper = $this->getPhotoMapper();
             /**
              * TODO: optionally we could use a transactional query here to make it
