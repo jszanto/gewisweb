@@ -27,7 +27,6 @@ class FaceDetection extends AbstractService
         foreach ($config['face_detect']['haarcascades'] as $haarCascade) {
             $faces = array_merge($faces,
                 face_detect($path, getcwd() . '/' . $config['face_detect']['haarcascades_dir'] . $haarCascade));
-            echo 'face_detect("' . $path . '", "' . getcwd(). '/' . $config['face_detect']['haarcascades_dir'] . $haarCascade.'");';
         }
 
         // Filter based on color
