@@ -128,6 +128,9 @@ class Photo
     {
         $photo = $this->getPhotoById($id);
         if (!is_null($photo)) {
+            foreach($photo->getFaces() as $face) {
+                $this->em->remove($face);
+            }
             $this->em->remove($photo);
         }
     }
