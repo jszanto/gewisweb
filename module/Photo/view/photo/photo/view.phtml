@@ -1,4 +1,5 @@
 <?php $this->headScript()->prependFile($this->basePath() . '/js/photo.js'); ?>
+<?php $this->headLink()->prependStylesheet($this->basePath() . '/css/photo.css'); ?>
 <?php if ($photo != null): ?>
     <div clas="row">
         <nav>
@@ -10,7 +11,15 @@
     </div>
     <div class="row">
         <div class="col-lg-9">
-            <img class="img-responsive" src="<?= $basedir . '/' . $photo->getLargeThumbPath() ?>" alt="">
+            <div class="wrap">
+                <img src="<?= $basedir . '/' . $photo->getLargeThumbPath() ?>" alt="">
+                <?php foreach($photo->getFaces() as $face): ?>
+                    <div class="face" style="width:<?= $face->getWidth() ?>px; height: <?= $face->getHeight() ?>px; top:<?= $face->getY() ?>px; left:<?= $face->getX() ?>px;">
+
+                    </div>
+
+                <?php endforeach; ?>
+            </div>
         </div>
         <div class="col-lg-3">
             <table class="table table-condensed">
