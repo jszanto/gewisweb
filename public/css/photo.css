@@ -1,0 +1,9 @@
+.wrap {
+    position: relative; /* make this relative to have the inner div absolute without breaking out */
+}
+
+.face {
+    position: absolute;
+
+    border: 3px solid #D40026;
+}

@@ -14,7 +14,7 @@
             <div class="wrap">
                 <img src="<?= $basedir . '/' . $photo->getLargeThumbPath() ?>" alt="">
                 <?php foreach($photo->getFaces() as $face): ?>
-                    <div class="face" style="width:<?= $face->getWidth() ?>px; height: <?= $face->getHeight() ?>px; top:<?= $face->getY() ?>px; left:<?= $face->getX() ?>px;">
+                    <div class="face" style="width:<?= $face->getWidth()*1.5 ?>px; height: <?= $face->getHeight()*1.5 ?>px; top:<?= $face->getY() - 0.25* $face->getHeight(); ?>px; left:<?= $face->getX()  - 0.25 * $face->getWidth();?>px;">
 
                     </div>
 
