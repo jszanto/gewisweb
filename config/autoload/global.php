@@ -75,6 +75,10 @@ return array(
         ),
         'face_detect' => array(
             'haarcascades_dir' => 'module/Photo/haarcascades/',
+            /*
+             * Note: Use with haarcascades from https://github.com/Itseez/opencv/tree/master/data/haarcascades
+             * Make sure to use the haarcascades corresponding to your OpenCV version or else it will crash.
+             */
             'haarcascades' => array(
                 'haarcascade_frontalface_alt.xml',
             ),
