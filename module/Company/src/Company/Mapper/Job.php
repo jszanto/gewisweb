@@ -8,12 +8,11 @@ use Doctrine\ORM\EntityManager;
 /**
  * Mappers for jobs.
  *
- * NOTE: Jobs will be modified externally by a script. Modifycations will be
+ * NOTE: Jobs will be modified externally by a script. Modifications will be
  * overwritten.
  */
 class Job
 {
-
     /**
      * Doctrine entity manager.
      *
@@ -21,9 +20,8 @@ class Job
      */
     protected $em;
 
-
     /**
-     * Constructor
+     * Constructor.
      *
      * @param EntityManager $em
      */
@@ -33,7 +31,7 @@ class Job
     }
 
     /**
-     * Find all companies.
+     * Find all jobs.
      *
      * @return array
      */
@@ -41,21 +39,89 @@ class Job
     {
         return $this->getRepository()->findAll();
     }
-    /**
-     * Find all jobs with the given job 'username' from the company with the given ascii name.
-     * @param companyAsciiName The asciiname of the containing company.
-     * @param jobAsciiName The asciiName of the requested job.
-     * @return An array of jobs that match the request.
-     */
-    public function findJobWithAsciiName($companyAsciiName,$jobAsciiName)
-    {
 
+    /**
+     * Saves all modified entities that are marked persistant
+     *
+     */
+    public function save()
+    {
+        $this->em->flush();
+    }
+
+    /**
+     *
+     * Checks if $slugName is only used by object identified with $cid
+     *
+     * @param string $slugName The slugName to be checked
+     * @param int $cid The id to ignore
+     *
+     */
+    public function isSlugNameUnique($companySlug, $slugName, $cid)
+    {
+        $objects = $this->findJobBySlugName($companySlug, $slugName);
+        foreach ($objects as $job) {
+            if ($job->getID() != $cid) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Inserts a job into a given package
+     *
+     * @param mixed $package
+     */
+    public function insertIntoPackage($package)
+    {
+        $job = new JobModel($this->em);
+
+        $job->setPackage($package);
+        $this->em->persist($job);
+
+        return $job;
+    }
+
+    /**
+     * Find all jobs identified by $jobSlugName that are owned by a company
+     * identified with $companySlugName
+     *
+     * @param mixed $companySlugName
+     * @param mixed $jobSlugName
+     */
+    public function findJobBySlugName($companySlugName, $jobSlugName)
+    {
         $qb = $this->getRepository()->createQueryBuilder('j');
-        $qb->select('j')->where("j.asciiName=:jobId");
-        $qb->setParameter('jobId', $companyAsciiName+'_'+$jobAsciiName);
+        $qb->select('j')->join('j.package', 'p')->join('p.company', 'c')->where('j.slugName=:jobId')
+        ->andWhere('c.slugName=:companySlugName');
+        $qb->setParameter('jobId', $jobSlugName);
+        $qb->setParameter('companySlugName', $companySlugName);
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * Find all jobs that are owned by a company identified with $companySlugName
+     *
+     * @param mixed $companySlugName
+     */
+    public function findJobByCompanySlugName($companySlugName)
+    {
+        $qb = $this->getRepository()->createQueryBuilder('j');
+        $qb->select('j')->join('j.package', 'p')->join('p.company', 'c')->where('c.slugName=:companySlugName');
+        $qb->setParameter('companySlugName', $companySlugName);
+
+        return $qb->getQuery()->getResult();
+    }
+
+
+    public function persist($job)
+    {
+        $this->em->persist($job);
+        $this->em->flush();
+    }
+
     /**
      * Get the repository for this mapper.
      *

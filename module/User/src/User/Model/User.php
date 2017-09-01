@@ -25,7 +25,7 @@ class User implements RoleInterface, ResourceInterface
 
     /**
      * The user's email address.
-     *
+     * Deprecated
      * @ORM\Column(type="string")
      */
     protected $email;
@@ -43,6 +43,13 @@ class User implements RoleInterface, ResourceInterface
      * @ORM\OneToMany(targetEntity="User\Model\UserRole", mappedBy="lidnr")
      */
     protected $roles;
+
+    /**
+     * User sessions
+     *
+     * @ORM\OneToMany(targetEntity="User\Model\Session", mappedBy="user")
+     */
+    protected $sessions;
 
     /**
      * The corresponding member for this user.
@@ -83,7 +90,7 @@ class User implements RoleInterface, ResourceInterface
      */
     public function getEmail()
     {
-        return $this->email;
+        return $this->member->getEmail();
     }
 
     /**
@@ -119,7 +126,7 @@ class User implements RoleInterface, ResourceInterface
     /**
      * Get the member information of this user.
      *
-     * @return Decision\Model\Member
+     * @return \Decision\Model\Member
      */
     public function getMember()
     {
@@ -133,7 +140,7 @@ class User implements RoleInterface, ResourceInterface
      */
     public function getRoleNames()
     {
-        $roles = array();
+        $roles = [];
 
         foreach ($this->getRoles() as $role) {
             $roles[] = $role->getRole();
@@ -152,6 +159,22 @@ class User implements RoleInterface, ResourceInterface
         return 'user_' . $this->getLidnr();
     }
 
+    /**
+     * @param array $roles
+     */
+    public function setRoles($roles)
+    {
+        $this->roles = $roles;
+    }
+
+    public function toArray()
+    {
+        return [
+            'lidnr' => $this->getLidnr(),
+            'email' => $this->getEmail(),
+            'member' => $this->getMember()->toArray()
+        ];
+    }
     /**
      * Get the user's resource ID.
      *

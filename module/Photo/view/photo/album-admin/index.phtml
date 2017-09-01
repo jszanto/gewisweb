@@ -3,44 +3,86 @@ $this->headScript()
     ->prependFile($this->basePath() . '/js/photo-admin.js')
     ->prependFile($this->basePath() . '/js/photo.js');
 $this->headLink()
-    ->prependStylesheet($this->basePath() . '/css/photo-admin.css')
+    ->prependStylesheet($this->basePath() . '/css/tree.css')
+    ->prependStylesheet($this->basePath() . '/css/photo-admin.css');
+
+$this->scriptUrl()->requireUrl('admin_photo/album_page', ['album_id', 'page'])
+    ->requireUrls(
+        [
+            'admin_photo/album_edit',
+            'admin_photo/album_delete',
+            'admin_photo/album_add',
+            'admin_photo/album_create',
+            'admin_photo/album_move',
+            'admin_photo/album_delete',
+            'admin_photo/album_cover',
+            'admin_photo/album_index'
+        ],
+        ['album_id']
+    )
+    ->requireUrls(
+        ['admin_photo/photo_index', 'admin_photo/photo_delete', 'admin_photo/photo_move'],
+        ['photo_id']
+    )
+    ->requireUrl('home');
 ?>
-<div class="row">
-    <div class="col-lg-12">
-        <h1><?= $this->translate('Photo admin') ?></h1>
-        <hr>
-    </div>
-</div>
+<h1><?= $this->translate('Photo admin') ?></h1>
+<hr>
 <div class="row">
     <div class="col-lg-3">
         <div class="panel panel-default">
             <div class="panel-body">
                 <ul class="tree">
                     <?php
-
-                    function showTree($albums)
+                    function showTree($albums, $context)
                     {
-                        ?>
-                        <?php foreach ($albums as $album): ?>
-                        <li><a id="<?= $album->getId() ?>"
-                               href="photo/album/<?= $album->getId() ?>"><?= $album->getName() ?></a>
-                            <?php if (count($album->getChildren()) > 0): ?>
-                                <ul>
-                                    <?= showTree($album->getChildren()) ?>
-                                </ul>
-                            <?php endif ?>
-                        </li>
-                    <?php endforeach ?>
+                        foreach ($albums as $album): ?>
+                            <li><a
+                                    id="<?= $album->getId() ?>"
+                                    href="<?= $context->url('admin_photo/album_index',
+                                        ['album_id' => $album->getId()]) ?>">
+                                    <?= $context->escapeHtml($album->getName()) ?>
+                                </a>
 
-                    <?php } ?>
-                    <?= showTree($albums) ?>
+                                <?php $children = $album->getChildren() ?>
+                                <?php if (!empty($children)): ?>
+                                    <ul>
+                                        <?php showTree($children, $context); ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </li>
+                        <?php
+                        endforeach;
+                    }
+
+                    foreach ($albumsByYear as $year => $albums):
+                        if (!empty($albums)):
+                            $nextYear = $year + 1;
+                            ?>
+                            <li>
+                                <?= "$year/$nextYear" ?>
+                                <ul>
+                                    <?php showTree($albums, $this); ?>
+                                </ul>
+                            </li>
+                        <?php endif;
+                    endforeach;
+                    if (!empty($albumsWithoutDate)):
+                        ?>
+                        <li>
+                            <?= $this->translate('Other albums'); ?>
+                            <ul>
+                                <?php showTree($albumsWithoutDate, $this); ?>
+                            </ul>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
     </div>
     <div class="col-lg-9">
 
-        <a id="btnCreate" class="btn btn-primary" href="photo/album/create"><span
+        <a id="btnCreate" class="btn btn-primary" href="<?= $this->url('admin_photo/album_create'); ?>"><span
                 class="glyphicon glyphicon-plus"></span>&nbsp;<?= $this->translate('Create new album') ?></a>
         <hr>
         <div id="albumControls">

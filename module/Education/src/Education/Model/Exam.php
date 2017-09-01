@@ -18,6 +18,15 @@ use Zend\Permissions\Acl\Resource\ResourceInterface;
 class Exam implements ResourceInterface
 {
 
+    const EXAM_TYPE_FINAL = 'exam';
+    const EXAM_TYPE_INTERMEDIATE_TEST = 'intermediate';
+    const EXAM_TYPE_ANSWERS = 'answers';
+    const EXAM_TYPE_OTHER = 'other';
+    const EXAM_TYPE_SUMMARY = 'summary';
+
+    const EXAM_LANGUAGE_ENGLISH = 'en';
+    const EXAM_LANGUAGE_DUTCH = 'nl';
+
     /**
      * Study ID.
      *
@@ -33,6 +42,27 @@ class Exam implements ResourceInterface
      * @ORM\Column(type="date")
      */
     protected $date;
+
+    /**
+     * Filename of the exam.
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $filename;
+
+    /**
+     * Type of exam. One of {exam, intermediate, answers, summary}
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $examType;
+
+    /**
+     * The language of the exam.
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $language;
 
     /**
      * Course belonging to this exam.
@@ -63,6 +93,26 @@ class Exam implements ResourceInterface
     }
 
     /**
+     * Get the filename.
+     *
+     * @return string
+     */
+    public function getFilename()
+    {
+        return $this->filename;
+    }
+
+    /**
+     * Get the type.
+     *
+     * @return string
+     */
+    public function getExamType()
+    {
+        return $this->examType;
+    }
+
+    /**
      * Get the course.
      *
      * @return Course
@@ -73,6 +123,16 @@ class Exam implements ResourceInterface
     }
 
     /**
+     * Get the language.
+     *
+     * @return string
+     */
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    /**
      * Set the date.
      *
      * @param \DateTime $date
@@ -80,6 +140,36 @@ class Exam implements ResourceInterface
     public function setDate(\DateTime $date)
     {
         $this->date = $date;
+    }
+
+    /**
+     * Set the type.
+     *
+     * @param string $examType
+     */
+    public function setExamType($examType)
+    {
+        $this->examType = $examType;
+    }
+
+    /**
+     * Set the filename.
+     *
+     * @param string $filename
+     */
+    public function setFilename($filename)
+    {
+        $this->filename = $filename;
+    }
+
+    /**
+     * Set the language.
+     *
+     * @param string $language
+     */
+    public function setLanguage($language)
+    {
+        $this->language = $language;
     }
 
     /**

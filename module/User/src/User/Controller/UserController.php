@@ -3,7 +3,8 @@
 namespace User\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController,
-    Zend\View\Model\ViewModel;
+    Zend\View\Model\ViewModel,
+    Zend\View\Model\JsonModel;
 
 class UserController extends AbstractActionController
 {
@@ -16,43 +17,65 @@ class UserController extends AbstractActionController
         $userService = $this->getUserService();
 
         if ($this->getRequest()->isPost()) {
+            $data = $this->getRequest()->getPost();
             // try to login
-            $login = $userService->login($this->getRequest()->getPost());
-
+            $login = $userService->login($data);
             if (null !== $login) {
-                return new ViewModel(array(
-                    'login' => true
-                ));
+                if (is_null($data['redirect']) || empty($data['redirect'])) {
+                    return $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+                }
+                return $this->redirect()->toUrl($data['redirect']);
             }
         }
 
         // show form
-        return new ViewModel(array(
-            'form' => $userService->getLoginForm()
-        ));
+        $form = $userService->getLoginForm();
+        if(is_null($form->get('redirect')->getValue())) {
+            if (isset($_SERVER['HTTP_REFERER'])) {
+                $form->get('redirect')->setValue($_SERVER['HTTP_REFERER']);
+            } else {
+                $form->get('redirect')->setValue($this->url()->fromRoute('home'));
+            }
+        }
+
+        return new ViewModel([
+            'form' => $form
+        ]);
     }
 
+    public function pinLoginAction()
+    {
+        $userService = $this->getUserService();
+
+        if ($this->getRequest()->isPost()) {
+            $data = $this->getRequest()->getPost();
+            // try to login
+            $login = $userService->pinLogin($data);
+
+            if (null !== $login) {
+
+                return new JsonModel([
+                    'login' => true,
+                    'user' => $login->toArray()
+                ]);
+            }
+        }
+        return new JsonModel([
+            'login' => false
+        ]);
+    }
     /**
      * User logout action.
      */
     public function logoutAction()
     {
-        $userService = $this->getUserService();
+        $this->getUserService()->logout();
 
-        if ($this->getRequest()->isPost()) {
-            if ($userService->logout($this->getRequest()->getPost())) {
-                return new ViewModel(array(
-                    'logout' => true
-                ));
-            }
-            // when the user is not logged out, return the user to the homepage
-            return $this->redirect()->toRoute('home');
+        if (isset($_SERVER['HTTP_REFERER'])) {
+            return $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
         }
 
-        // show form
-        return new ViewModel(array(
-            'form' => $userService->getLogoutform()
-        ));
+        return $this->redirect()->toRoute('home');
     }
 
     /**
@@ -65,17 +88,59 @@ class UserController extends AbstractActionController
         if ($this->getRequest()->isPost()) {
             $newUser = $userService->register($this->getRequest()->getPost());
             if (null !== $newUser) {
-                return new ViewModel(array(
+                return new ViewModel([
                     'registered' => true,
                     'user' => $newUser
-                ));
+                ]);
             }
         }
 
         // show form
-        return new ViewModel(array(
+        return new ViewModel([
             'form' => $userService->getRegisterForm()
-        ));
+        ]);
+    }
+
+    /**
+     * Action to change password.
+     */
+    public function passwordAction()
+    {
+        $userService = $this->getUserService();
+        $request = $this->getRequest();
+
+        if ($request->isPost() && $userService->changePassword($request->getPost())) {
+            return new ViewModel([
+                'success' => true
+            ]);
+        }
+
+        return new ViewModel([
+            'form' => $this->getUserService()->getPasswordForm()
+        ]);
+    }
+
+    /**
+     * Action to reset password.
+     */
+    public function resetAction()
+    {
+        $userService = $this->getUserService();
+        $request = $this->getRequest();
+
+        if ($request->isPost()) {
+            $newUser = $userService->reset($request->getPost());
+            if (null !== $newUser) {
+                return new ViewModel([
+                    'reset' => true,
+                    'user' => $newUser
+                ]);
+            }
+        }
+
+        return new ViewModel([
+            'form' => $userService->getPasswordResetForm()
+        ]);
     }
 
     /**
@@ -100,21 +165,22 @@ class UserController extends AbstractActionController
         }
 
         if ($this->getRequest()->isPost() && $userService->activate($this->getRequest()->getPost(), $newUser)) {
-            return new ViewModel(array(
+            return new ViewModel([
                 'activated' => true
-            ));
+            ]);
         }
 
-        return new ViewModel(array(
+        return new ViewModel([
             'form' => $userService->getActivateForm(),
             'user' => $newUser
-        ));
+        ]);
     }
+
 
     /**
      * Get a user service.
      *
-     * @return User\Service\User
+     * @return \User\Service\User
      */
     protected function getUserService()
     {

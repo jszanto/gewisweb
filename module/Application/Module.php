@@ -47,12 +47,72 @@ class Module
 
     public function getAutoloaderConfig()
     {
-        return array(
-            'Zend\Loader\StandardAutoloader' => array(
-                'namespaces' => array(
+        if (APP_ENV === 'production') {
+            return [
+                'Zend\Loader\ClassMapAutoloader' => [
+                    __DIR__ . '/autoload_classmap.php',
+                ]
+            ];
+        }
+
+        return [
+            'Zend\Loader\StandardAutoloader' => [
+                'namespaces' => [
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
-                ),
-            ),
-        );
+                ]
+            ]
+        ];
+    }
+
+    public function getServiceConfig()
+    {
+        return [
+            'invokables' => [
+                'application_service_storage' => 'Application\Service\FileStorage',
+                'application_service_legacy' => 'Application\Service\Legacy',
+                'application_service_email' => 'Application\Service\Email'
+            ],
+        ];
+    }
+
+    /**
+     * Get view helper configuration.
+     *
+     * @return array
+     */
+    public function getViewHelperConfig()
+    {
+        return [
+            'factories' => [
+                'acl' => function ($sm) {
+                    $locator = $sm->getServiceLocator();
+                    $helper = new \Application\View\Helper\Acl();
+                    $helper->setServiceLocator($locator);
+                    return $helper;
+                },
+                'scriptUrl' => function ($sm) {
+                    $helper = new \Application\View\Helper\ScriptUrl();
+                    return $helper;
+                },
+                'moduleIsActive' => function ($sm) {
+                    $locator = $sm->getServiceLocator();
+                    $helper = new \Application\View\Helper\ModuleIsActive();
+                    $helper->setServiceLocator($locator);
+                    return $helper;
+                },
+                'fileUrl' => function ($sm) {
+                    $locator = $sm->getServiceLocator();
+                    $helper = new \Application\View\Helper\FileUrl();
+                    $helper->setServiceLocator($locator);
+                    return $helper;
+                },
+                'infima' => function ($sm) {
+                    $locator = $sm->getServiceLocator();
+                    $helper = new \Application\View\Helper\Infima();
+                    $helper->setLegacyService($locator->get('application_service_legacy'));
+                    return $helper;
+                }
+            ]
+        ];
     }
 }

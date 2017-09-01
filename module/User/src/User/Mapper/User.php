@@ -28,27 +28,15 @@ class User
     }
 
     /**
-     * Find a user by its email.
-     *
-     * @param int $email Email to search by
-     *
-     * @return UserModel
-     */
-    public function findByEmail($email)
-    {
-        return $this->getRepository()->findOneBy(array('email' => $email));
-    }
-
-    /**
      * Find a user by its membership number.
      *
-     * @param int $number Membership number
+     * @param int $lidnr Membership number
      *
      * @return UserModel
      */
-    public function findByLidnr($email)
+    public function findByLidnr($lidnr)
     {
-        return $this->getRepository()->findOneBy(array('lidnr' => $email));
+        return $this->getRepository()->findOneBy(['lidnr' => $lidnr]);
     }
 
     /**
@@ -56,7 +44,7 @@ class User
      *
      * @param string $login
      *
-     * @return void
+     * @return UserModel
      */
     public function findByLogin($login)
     {
@@ -72,7 +60,7 @@ class User
         if (is_numeric($login)) {
             $qb->where('u.lidnr = ?1');
         } else {
-            $qb->where('u.email = ?1');
+            $qb->where('m.email = ?1');
         }
 
         // set the parameters
@@ -81,6 +69,28 @@ class User
 
         $res = $qb->getQuery()->getResult();
         return empty($res) ? null : $res[0];
+    }
+
+    /**
+     * Detach a user from the entity manager.
+     *
+     * @param UserModel $user
+     */
+    public function detach(UserModel $user)
+    {
+        $this->em->detach($user);
+    }
+
+    /**
+     * Re-attach a user to the entity manager.
+     *
+     * @param UserModel $user
+     *
+     * @return UserModel
+     */
+    public function merge(UserModel $user)
+    {
+        return $this->em->merge($user);
     }
 
     /**
@@ -112,7 +122,7 @@ class User
     /**
      * Get the repository for this mapper.
      *
-     * @return Doctrine\ORM\EntityRepository
+     * @return \Doctrine\ORM\EntityRepository
      */
     public function getRepository()
     {

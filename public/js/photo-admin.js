@@ -6,17 +6,19 @@
 
 Photo.Admin = {};
 Photo.Admin.activePage = 'photo';
+Photo.Admin.activeData = null;
 Photo.Admin.selectedCount = 0;
 Photo.Admin.loadPage = function (resource) {
     $.getJSON(resource, function (data) {
         Photo.Admin.activePage = resource;
+        Photo.Admin.activeData = data;
         Photo.Admin.selectedCount = 0;
         $("#album").html('<div class="row"></div>');
         $.each(data.albums, function (i, album) {
-            href = 'photo/album/' + album.id
+            href = URLHelper.url('admin_photo/album_index', {'album_id': album.id});
             $("#album").append('<div class="col-lg-3 col-md-4 col-xs-6 thumb">'
                     + '<a class="thumbnail" href="' + href + '">'
-                    + '<img class="img-responsive" src="/data/photo/' + album.coverPath + '" alt="">'
+                    + '<img class="img-responsive" src="' + URLHelper.url('home') + 'data/' + album.coverPath + '" alt="">'
                     + album.name
                     + '</a>'
                     + '</div>');
@@ -27,18 +29,20 @@ Photo.Admin.loadPage = function (resource) {
         });
 
         $.each(data.photos, function (i, photo) {
-            href = 'photo/photo/' + photo.id
+            href = URLHelper.url('admin_photo/photo_index', {'photo_id': photo.id});
             $("#album").append('<div class="col-lg-3 col-md-4 col-xs-6 thumb">'
-                    + '<a class="thumbnail" href="' + href + '">'
-                    + '<img class="img-responsive" src="/data/photo/' + photo.smallThumbPath + '" alt="">'
-                    + '<input type="checkbox" class="thumbnail-checkbox">'
+                    + '<div class="thumbnail">'
+                    + '<a href="' + href + '">'
+                    + '<img class="img-responsive" src="' + URLHelper.url('home') + 'data/' + photo.smallThumbPath + '" alt="">'
                     + '</a>'
+                    + '<input type="checkbox" class="thumbnail-checkbox">'
+                    + '</div>'
                     + '</div>');
         });
         $("#paging").html('');
 
         $.each(data.pages.pagesInRange, function (key, page) {
-            href = 'photo/album/' + data.album.id + '/' + page;
+            href = URLHelper.url('admin_photo/album_page', {'album_id': data.album.id, 'page': page});
             if (page === data.pages.current)
             {
                 $("#paging").append('<li class="active"><a href="' + href + '">' + (page) + '</a></li>');
@@ -48,14 +52,14 @@ Photo.Admin.loadPage = function (resource) {
         });
         if (data.pages.previous)
         {
-            href = 'photo/album/' + data.album.id + '/' + (data.pages.next);
+            href = URLHelper.url('admin_photo/album_page', {'album_id': data.album.id, 'page': data.pages.previous});
             $("#paging").prepend('<li><a id="previous" href="' + href + '">'
                     + '<span aria-hidden="true">«</span>'
                     + '<span class="sr-only">Previous</span>'
                     + '</a></li>');
         }
         if (data.pages.next) {
-            href = 'photo/album/' + data.album.id + '/' + (data.pages.next);
+            href = URLHelper.url('admin_photo/album_page', {'album_id': data.album.id, 'page': data.pages.next});
             $("#paging").append('<li><a id="next" href="' + href + '">'
                     + '<span aria-hidden="true">»</span>'
                     + '<span class="sr-only">Next</span>'
@@ -71,18 +75,18 @@ Photo.Admin.loadPage = function (resource) {
         });
 
         $(".thumbnail-checkbox").change(Photo.Admin.itemSelected);
-        $("#btnAdd").attr('href', 'photo/album/' + data.album.id + '/add');
-        $("#btnEdit").attr('href', 'photo/album/' + data.album.id + '/edit');
-        $("#btnCreate").attr('href', 'photo/album/' + data.album.id + '/create');
+        $("#btnAdd").attr('href', URLHelper.url('admin_photo/album_add', {'album_id': data.album.id}));
+        $("#btnEdit").attr('href', URLHelper.url('admin_photo/album_edit', {'album_id': data.album.id}));
+        $("#btnCreate").attr('href', URLHelper.url('admin_photo/album_create', {'album_id': data.album.id}));
     });
 }
 
 Photo.Admin.regenerateCover = function () {
     $("#coverPreview").hide();
     $("#coverSpinner").show();
-    $.post(Photo.Admin.activePage + '/cover', function (data) {
+    $.post(URLHelper.url('admin_photo/album_cover', {'album_id': Photo.Admin.activeData.album.id}), function (data) {
         $.getJSON(Photo.Admin.activePage, function (data) {
-            $("#coverPreview").attr('src', '/data/photo/' + data.album.coverPath);
+            $("#coverPreview").attr('src', URLHelper.url('home') + 'data/' + data.album.coverPath);
             $("#coverPreview").show();
             $("#coverSpinner").hide();
         });
@@ -92,7 +96,7 @@ Photo.Admin.regenerateCover = function () {
 Photo.Admin.deleteAlbum = function () {
     $("#deleteConfirm").hide();
     $("#deleteProgress").show();
-    $.post(Photo.Admin.activePage + '/delete').done(function( data ) {
+    $.post(URLHelper.url('admin_photo/album_delete', {'album_id': Photo.Admin.activeData.album.id})).done(function( data ) {
         location.reload(); //reload to update album tree (TODO: update album tree dynamically)
     });
     $("#deleteProgress").hide();
@@ -102,7 +106,9 @@ Photo.Admin.deleteAlbum = function () {
 Photo.Admin.deletePhoto = function () {
     $("#deleteConfirm").hide();
     $("#deleteProgress").show();
-    $.post(location.href + '/delete');
+    $.post(location.href + '/delete').always(function( data ){
+        window.location = $('.next-on-delete').first().attr('href');
+    });
     $("#deleteProgress").hide();
     $("#deleteDone").show();
 }
@@ -110,44 +116,65 @@ Photo.Admin.deletePhoto = function () {
 Photo.Admin.deleteMultiple = function () {
     $("#multipleDeleteConfirm").hide();
     $("#multipleDeleteProgress").show();
-    var thumbnails = [];
+    var toDelete = [];
     $(".thumbnail-checkbox:checked").each(function() {
-        thumbnails.push($(this).parent().parent());
-        $.post($(this).parent().attr('href') + '/delete').done(function() {
-            thumbnails.pop().remove();
+        toDelete.push($(this).parent().find('a'));
+    });
+
+    $.each(toDelete, function( i, item ) {
+        $.post(item.attr('href') + '/delete').always(function() {
+            item.parent().remove();
+            toDelete.splice(toDelete.indexOf(item), 1);
+            if(toDelete.length == 0) {
+                Photo.Admin.resetDeleteMultiple();
+            }
         });
     });
-    $("#multipleDeleteProgress").hide();
-    $("#multipleDeleteDone").show();
+}
+
+Photo.Admin.resetDeleteMultiple = function() {
+    $('#multipleDeleteModal').modal('hide');
+    $('#multipleDeleteConfirm').show();
+    $('#multipleDeleteProgress').hide();
+    Photo.Admin.clearSelection();
 }
 
 Photo.Admin.moveMultiple = function () {
     $("#multipleMoveConfirm").hide();
     $("#multipleMoveProgress").show();
-    var thumbnails = [];
+    var toMove = [];
     $(".thumbnail-checkbox:checked").each(function() {
-        thumbnails.push($(this).parent().parent());
-        $.post($(this).parent().attr('href') + '/move',
+        toMove.push($(this).parent().find('a'));
+    });
+    $.each(toMove, function( i, item ) {
+        $.post(item.attr('href') + '/move',
             { album_id : $("#newPhotoAlbum").val() }
-        ).done(function() {
-            thumbnails.pop().remove();
+        ).always(function() {
+            item.parent().remove();
+            toMove.splice(toMove.indexOf(item), 1);
+            if(toMove.length == 0) {
+                Photo.Admin.resetMoveMultiple();
+            }
         });
     });
-    $("#multipleMoveProgress").hide();
-    $("#multipleMoveDone").show();
+}
+
+Photo.Admin.resetMoveMultiple = function() {
+    $('#multipleMoveModal').modal('hide');
+    $('#multipleMoveConfirm').show();
+    $('#multipleMoveProgress').hide();
+    Photo.Admin.clearSelection();
 }
 
 Photo.Admin.moveAlbum = function () {
     $("#albumMoveSelect").hide();
     $("#albumMoveProgress").show();
     $.post(
-        Photo.Admin.activePage + '/move',
+        URLHelper.url('admin_photo/album_move', {'album_id': Photo.Admin.activeData.album.id}),
         { parent_id : $("#newAlbumParent").val() }
     ).done(function( data ) {
             location.reload(); //reload to update album tree (TODO: update album tree dynamically)
-        });
-    $("#albumMoveProgress").hide();
-    $("#albumMoveDone").show();
+    });
 
 }
 
@@ -179,7 +206,7 @@ Photo.Admin.init = function () {
     //auto load album on hash
     if (location.hash !== "") {
         $(location.hash).click();
-        $(location.hash).parent().parent().children().toggle();
+        //$(location.hash).parent().parent().children().toggle();
     }
 }
 
@@ -187,6 +214,7 @@ Photo.Admin.initPhoto = function() {
     $("#deletePhotoButton").on('click', Photo.Admin.deletePhoto);
     $("#movePhotoButton").on('click', Photo.Admin.movePhoto);
 }
+
 Photo.Admin.itemSelected = function () {
     if (this.checked) {
         Photo.Admin.selectedCount++;
@@ -203,28 +231,14 @@ Photo.Admin.itemSelected = function () {
         $("#btnMultipleMove").addClass("btn-hidden");
     }
 }
-Photo.Admin.initAdd = function () {
-    $("#btnImport").click(function () {
-        $.post("import",
-                {
-                    folder_path: $("#folderInput").val()
-                },
-        function (data) {
-            $("#spinner").hide();
-            if (data.success) {
-                $("#successAlert").show();
-            } else {
-                $("#errorAlert").html(data.error);
-                $("#errorAlert").show();
-                $("#import").show();
-            }
-        });
-        $("#errorAlert").hide();
-        $("#spinner").show();
-        $("#import").hide();
-    });
 
+Photo.Admin.clearSelection = function() {
+    Photo.Admin.selectedCount = 0;
+    $(".selectedCount").html(0);
+    $("#btnMultipleDelete").addClass("btn-hidden");
+    $("#btnMultipleMove").addClass("btn-hidden");
 }
+
 Photo.Admin.updateBreadCrumb = function (target) {
 
     if (target.attr('class') == 'thumbnail') {
@@ -266,6 +280,7 @@ Photo.Admin.albumClicked = function (e) {
     Photo.Admin.loadPage(e.target.href);
 
 }
+
 $.fn.extend({
     treed: function () {
         //initialize each of the top levels

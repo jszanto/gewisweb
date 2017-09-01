@@ -1,10 +1,9 @@
 <?php
-namespace Company;
 
+namespace Company;
 
 class Module
 {
-
     /**
      * Get the autoloader configuration.
      *
@@ -12,13 +11,21 @@ class Module
      */
     public function getAutoloaderConfig()
     {
-        return array(
-            'Zend\Loader\StandardAutoloader' => array(
-                'namespaces' => array(
+        if (APP_ENV === 'production') {
+            return [
+                'Zend\Loader\ClassMapAutoloader' => [
+                    __DIR__ . '/autoload_classmap.php',
+                ]
+            ];
+        }
+
+        return [
+            'Zend\Loader\StandardAutoloader' => [
+                'namespaces' => [
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
-                )
-            )
-        );
+                ]
+            ]
+        ];
     }
 
     /**
@@ -28,7 +35,7 @@ class Module
      */
     public function getConfig()
     {
-        return include __DIR__ . '/config/module.config.php';
+        return include __DIR__.'/config/module.config.php';
     }
 
     /**
@@ -38,26 +45,94 @@ class Module
      */
     public function getServiceConfig()
     {
-        return array(
-            'invokables' => array(
-                'company_service_company' => 'Company\Service\Company'
-            ),
-            'factories' => array(
-
+        return [
+            'invokables' => [
+                'company_service_company' => 'Company\Service\Company',
+            ],
+            'factories' => [
                 'company_mapper_company' => function ($sm) {
                     return new \Company\Mapper\Company(
                         $sm->get('company_doctrine_em')
                     );
                 },
-                    'company_mapper_job' => function ($sm) {
-                        return new \Company\Mapper\Job(
-                            $sm->get('company_doctrine_em')
-                        );
-                    },
-                        'company_doctrine_em' => function ($sm) {
-                            return $sm->get('doctrine.entitymanager.orm_default');
-                        }
-        )
-        );
+                'company_mapper_job' => function ($sm) {
+                    return new \Company\Mapper\Job(
+                        $sm->get('company_doctrine_em')
+                    );
+                },
+                'company_mapper_package' => function ($sm) {
+                    return new \Company\Mapper\Package(
+                        $sm->get('company_doctrine_em')
+                    );
+                },
+                'company_mapper_featuredpackage' => function ($sm) {
+                    return new \Company\Mapper\FeaturedPackage(
+                        $sm->get('company_doctrine_em')
+                    );
+                },
+                'company_mapper_bannerpackage' => function ($sm) {
+                    return new \Company\Mapper\BannerPackage(
+                        $sm->get('company_doctrine_em')
+                    );
+                },
+                'company_doctrine_em' => function ($sm) {
+                    return $sm->get('doctrine.entitymanager.orm_default');
+                },
+                'company_admin_edit_package_form' => function ($sm) {
+                    return new \Company\Form\EditPackage(
+                        $sm->get('translator'),
+                        "job"
+                    );
+                },
+                'company_admin_edit_featuredpackage_form' => function ($sm) {
+                    return new \Company\Form\EditPackage(
+                        $sm->get('translator'),
+                        "featured"
+                    );
+                },
+                'company_admin_edit_bannerpackage_form' => function ($sm) {
+                    return new \Company\Form\EditPackage(
+                        $sm->get('translator'),
+                        "banner"
+                    );
+                },
+                'company_admin_edit_company_form' => function ($sm) {
+                    return new \Company\Form\EditCompany(
+                        $sm->get('company_mapper_company'),
+                        $sm->get('translator')
+                    );
+                },
+                'company_language' => function ($sm) {
+                    return $sm->get('translator');
+                },
+                'company_admin_edit_job_form' => function ($sm) {
+                    $form = new \Company\Form\EditJob(
+                        $sm->get('company_mapper_job'),
+                        $sm->get('translator')
+                    );
+                    $form->setHydrator($sm->get('company_hydrator'));
+                    return $form;
+                },
+                'company_hydrator' => function ($sm) {
+                    return new \DoctrineModule\Stdlib\Hydrator\DoctrineObject(
+                        $sm->get('company_doctrine_em')
+                    );
+                },
+                'company_acl' => function ($sm) {
+                    $acl = $sm->get('acl');
+
+                    // add resource
+                    $acl->addResource('company');
+
+                    $acl->allow('guest', 'company', 'viewFeaturedCompany');
+                    $acl->allow('guest', 'company', 'list');
+                    $acl->allow('guest', 'company', 'view');
+                    $acl->allow('guest', 'company', 'showBanner');
+                    $acl->allow('company_admin', 'company', ['insert', 'edit', 'delete', 'listall']);
+
+                    return $acl;
+                },
+            ],
+        ];
     }
 }

@@ -1,41 +1,16 @@
-<?php if (isset($this->login) && $this->login): ?>
-<?= $this->translate('You are logged in.') ?>
-<?php else:
-$form = $this->form;
-$form->prepare();
-
-$form->setAttribute('action', $this->url('user'));
-
-$form->setAttribute('method', 'post');
-?>
-<p>
-<?= $this->form()->openTag($form) ?>
-
-<dl>
-<?php $element = $form->get('login') ?>
-    <dt><?= $element->getOption('label') ?></dt>
-    <dd>
-        <?= $this->formInput($element) ?>
-        <?= $this->formElementErrors($element); ?>
-    </dd>
-
-<?php $element = $form->get('password') ?>
-    <dt><?= $element->getOption('label') ?></dt>
-    <dd>
-        <?= $this->formInput($element) ?>
-        <?= $this->formElementErrors($element); ?>
-    </dd>
-
-</dl>
-
-<?= $this->formRow($form->get('submit')); ?>
-<?= $this->form()->closeTag(); ?>
-</p>
-<p>
 <?php
-$url = $this->url('user/default', array('action' => 'register'));
+$this->headTitle($this->translate('Login'));
 ?>
-<?= sprintf($this->translate("If you don't have an account yet, go to the %sRegistration page%s"), '<a href="' . $url . '">', '</a>') ?>
-</p>
-<?php endif; ?>
-
+<section class="section">
+    <div class="container">
+        <?php if (isset($this->login) && $this->login): ?>
+            <?= $this->translate('You are logged in.') ?>
+        <?php else: ?>
+            <div class="row">
+                <div class="col-sm-10 col-sm-offset-1 col-md-7 col-md-offset-2 col-lg-6 col-lg-offset-3">
+                    <?= $this->partial('partial/login.phtml', ['form' => $form]) ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>

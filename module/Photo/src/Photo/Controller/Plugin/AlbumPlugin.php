@@ -4,12 +4,47 @@ namespace Photo\Controller\Plugin;
 
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 use Zend\Paginator;
+use Zend\View\Helper;
 
 /**
  * This plugin helps with rendering the pages doing album related stuff.
  */
 class AlbumPlugin extends AbstractPlugin
 {
+
+    /**
+     * Gets an album page, but returns all objects as assoc arrays
+     *
+     * @param int $albumId the id of the album
+     *
+     * @return array|null Array with data or null if the page does not exist
+     */
+    public function getAlbumAsArray($albumId)
+    {
+        $albumService = $this->getAlbumService();
+        $album = $albumService->getAlbum($albumId);
+
+        if (is_null($album)) {
+            return null;
+        }
+
+        $albumArray = $album->toArrayWithChildren();
+
+        $photos = $albumArray['photos'];
+        $albums = $albumArray['children'];
+
+        $albumArray['photos'] = [];
+        $albumArray['children'] = [];
+
+        $photoService = $this->getPhotoService();
+
+        return [
+            'album' => $albumArray,
+            'basedir' => $photoService->getBaseDirectory(),
+            'photos' => $photos,
+            'albums' => $albums
+        ];
+    }
 
     /**
      * Gets an album page, but returns all objects as assoc arrays
@@ -22,12 +57,12 @@ class AlbumPlugin extends AbstractPlugin
     public function getAlbumPageAsArray($albumId, $activePage)
     {
         $page = $this->getAlbumPage($albumId, $activePage);
-        if(is_null($page)) {
+        if (is_null($page)) {
             return null;
         }
         $paginator = $page['paginator'];
-        $photos = array();
-        $albums = array();
+        $photos = [];
+        $albums = [];
 
         foreach ($paginator as $item) {
             if ($item->getResourceId() === 'album') {
@@ -37,13 +72,13 @@ class AlbumPlugin extends AbstractPlugin
             }
         }
 
-        return array(
+        return [
             'album' => $page['album']->toArray(),
             'basedir' => $page['basedir'],
             'pages' => $paginator->getPages(),
             'photos' => $photos,
             'albums' => $albums
-        );
+        ];
     }
 
     /**
@@ -75,11 +110,11 @@ class AlbumPlugin extends AbstractPlugin
         $photoService = $this->getPhotoService();
         $basedir = $photoService->getBaseDirectory();
 
-        return array(
+        return [
             'album' => $album,
             'basedir' => $basedir,
             'paginator' => $paginator,
-        );
+        ];
     }
 
     /**

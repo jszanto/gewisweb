@@ -1,73 +1,173 @@
 <?php
-return array(
-    'router' => array(
-        'routes' => array(
-            'user' => array(
+use User\Controller\ApiAuthenticationController;
+use User\Controller\Factory\ApiAuthenticationControllerFactory;
+
+return [
+    'router' => [
+        'routes' => [
+            'user' => [
                 'type'    => 'Literal',
-                'options' => array(
+                'options' => [
                     'route'    => '/user',
-                    'defaults' => array(
+                    'defaults' => [
                         '__NAMESPACE__' => 'User\Controller',
                         'controller'    => 'User',
                         'action'        => 'index',
-                    ),
-                ),
+                    ],
+                ],
                 'may_terminate' => true,
-                'child_routes' => array(
-                    'default' => array(
+                'child_routes' => [
+                    'default' => [
                         'type'    => 'Segment',
-                        'options' => array(
+                        'options' => [
                             'route'    => '[/:action]',
-                            'constraints' => array(
+                            'constraints' => [
                                 'action'     => '[a-zA-Z][a-zA-Z0-9_-]*',
-                            ),
-                        ),
-                    ),
-                    'login' => array(
+                            ],
+                        ],
+                    ],
+                    'login' => [
                         'type' => 'Literal',
-                        'options' => array(
+                        'options' => [
                             'route' => '/login',
-                        )
-                    ),
-                    'activate' => array(
+                        ]
+                    ],
+                    'logout' => [
+                        'type' => 'Literal',
+                        'options' => [
+                            'route' => '/logout',
+                            'defaults' => [
+                                'action' => 'logout'
+                            ]
+                        ],
+                    ],
+                    'pinlogin' => [
+                        'type' => 'Literal',
+                        'options' => [
+                            'route' => '/pinlogin',
+                            'defaults' => [
+                                'action' => 'pinLogin',
+                            ],
+                        ],
+                    ],
+                    'activate_reset' => [
                         'type' => 'Segment',
-                        'options' => array(
-                            'route' => '/activate/:code',
-                            'constraints' => array(
+                        'options' => [
+                            'route' => '/reset/:code',
+                            'constraints' => [
                                 'code' => '[a-zA-Z0-9]*'
-                            ),
-                            'defaults' => array(
+                            ],
+                            'defaults' => [
+                                'code'   => '',
+                                'action' => 'activateReset'
+                            ]
+                        ]
+                    ],
+                    'activate' => [
+                        'type' => 'Segment',
+                        'options' => [
+                            'route' => '/activate/:code',
+                            'constraints' => [
+                                'code' => '[a-zA-Z0-9]*'
+                            ],
+                            'defaults' => [
                                 'code'   => '',
                                 'action' => 'activate'
-                            )
-                        )
-                    )
-                ),
-            ),
-        ),
-    ),
-    'controllers' => array(
-        'invokables' => array(
-            'User\Controller\User' => 'User\Controller\UserController'
-        )
-    ),
-    'view_manager' => array(
-        'template_path_stack' => array(
+                            ]
+                        ]
+                    ]
+                ],
+                'priority' => 100
+            ],
+            'user_admin' => [
+                'type'    => 'Literal',
+                'options' => [
+                    'route' => '/admin/user',
+                    'defaults' => [
+                        '__NAMESPACE__' => 'User\Controller',
+                    ]
+                ],
+                'may_terminate' => false,
+                'child_routes' => [
+                    'api' => [
+                        'type' => 'Literal',
+                        'options' => [
+                            'route' => '/api',
+                            'defaults' => [
+                                'controller' => 'ApiAdmin',
+                                'action'     => 'index'
+                            ]
+                        ],
+                        'may_terminate' => true,
+                        'child_routes' => [
+                            'remove' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route'    => '/remove/:id',
+                                    'constraints' => [
+                                        'id' => '[0-9]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'remove'
+                                    ]
+                                ]
+                            ],
+                            'default' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route'    => '/:action',
+                                    'constraints' => [
+                                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'priority' => 100
+            ],
+            'user_token' => [
+                'type' => 'segment',
+                'options' => [
+                    'route' => '/token/:appId',
+                    'defaults' => [
+                        'controller' => \User\Controller\ApiAuthenticationController::class,
+                        'action' => 'token',
+                    ]
+                ],
+                'priority' => 100
+            ]
+        ],
+    ],
+    'controllers' => [
+        'invokables' => [
+            'User\Controller\User' => 'User\Controller\UserController',
+            'User\Controller\ApiAdmin' => 'User\Controller\ApiAdminController',
+        ],
+        'factories' => [
+            ApiAuthenticationController::class => ApiAuthenticationControllerFactory::class,
+        ]
+    ],
+    'view_manager' => [
+        'template_path_stack' => [
             'user' => __DIR__ . '/../view/'
-        )
-    ),
-    'doctrine' => array(
-        'driver' => array(
-            'user_entities' => array(
+        ],
+        'template_map' => [
+            'user/login'       => __DIR__ . '/../view/partial/login.phtml',
+        ],
+    ],
+    'doctrine' => [
+        'driver' => [
+            'user_entities' => [
                 'class' => 'Doctrine\ORM\Mapping\Driver\AnnotationDriver',
                 'cache' => 'array',
-                'paths' => array(__DIR__ . '/../src/User/Model/')
-            ),
-            'orm_default' => array(
-                'drivers' => array(
+                'paths' => [__DIR__ . '/../src/User/Model/']
+            ],
+            'orm_default' => [
+                'drivers' => [
                     'User\Model' => 'user_entities'
-                )
-            )
-        )
-    )
-);
+                ]
+            ]
+        ]
+    ]
+];

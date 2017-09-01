@@ -125,6 +125,25 @@ class Photo implements ResourceInterface
     protected $faces;
 
     /**
+     * All the hits of this photo.
+     * @ORM\OneToMany(targetEntity="Hit", mappedBy="photo", cascade={"persist", "remove"})
+     */
+    protected $hits;
+
+    /**
+     * All the tags for this photo.
+     *
+     * @ORM\OneToMany(targetEntity="Tag", mappedBy="photo", cascade={"persist", "remove"})
+     */
+    protected $tags;
+
+    /**
+     * The corresponding WeeklyPhoto entity if this photo has been a weekly photo
+     * @ORM\OneToOne(targetEntity="WeeklyPhoto", mappedBy="photo", cascade={"persist", "remove"})
+     */
+    protected $weeklyPhoto;
+
+    /**
      * Get the ID.
      *
      * @return int
@@ -137,7 +156,7 @@ class Photo implements ResourceInterface
     /**
      * Get the date.
      *
-     * @return DateTime
+     * @return \DateTime
      */
     public function getDateTime()
     {
@@ -272,6 +291,22 @@ class Photo implements ResourceInterface
     public function getFaces()
     {
         return $this->faces;
+    }
+
+    /**
+     * @return \Photo\Model\Tag
+     */
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @return \Photo\Model\WeeklyPhoto|null
+     */
+    public function getWeeklyPhoto()
+    {
+        return $this->weeklyPhoto;
     }
 
     /**
@@ -413,6 +448,29 @@ class Photo implements ResourceInterface
         $face->setPhoto($this);
         $this->faces[] = $face;
     }
+
+    /**
+     * Add a hit to a photo
+     *
+     * @param \Photo\Model\Hit $hit
+     */
+    public function addHit($hit)
+    {
+        $hit->setPhoto($this);
+        $this->hits[] = $hit;
+    }
+
+    /**
+     * Add a tag to a photo.
+     *
+     * @param \Photo\Model\Tag $tag
+     */
+    public function addTag($tag)
+    {
+        $tag->setPhoto($this);
+        $this->tags[] = $tag;
+    }
+
     /**
      * Returns an associative array representation of this object
      *
@@ -420,61 +478,24 @@ class Photo implements ResourceInterface
      */
     public function toArray()
     {
-        $array = array(
-            'id' => $this->id,
-            'dateTime' => $this->dateTime,
-            'artist' => $this->artist,
-            'camera' => $this->camera,
-            'flash' => $this->flash,
-            'focalLength' => $this->focalLength,
-            'exposureTime' => $this->exposureTime,
-            'shutterSpeed' => $this->shutterSpeed,
-            'aperture' => $this->aperture,
-            'iso' => $this->iso,
-            'album' => $this->album->toArray(),
-            'path' => $this->path,
-            'smallThumbPath' => $this->smallThumbPath,
-            'largeThumbPath' => $this->largeThumbPath
-        );
+        $array = [
+            'id' => $this->getId(),
+            'dateTime' => $this->getDateTime(),
+            'artist' => $this->getArtist(),
+            'camera' => $this->getCamera(),
+            'flash' => $this->getFlash(),
+            'focalLength' => $this->getFocalLength(),
+            'exposureTime' => $this->getExposureTime(),
+            'shutterSpeed' => $this->getShutterSpeed(),
+            'aperture' => $this->getAperture(),
+            'iso' => $this->getIso(),
+            'album' => $this->getAlbum()->toArray(),
+            'path' => $this->getPath(),
+            'smallThumbPath' => $this->getSmallThumbPath(),
+            'largeThumbPath' => $this->getLargeThumbPath()
+        ];
 
         return $array;
-    }
-
-    /**
-     * Updates the photoCount and date in the album object.
-     *
-     * @ORM\PrePersist()
-     * @ORM\PostUpdate()
-     */
-    public function updateOnAdd()
-    {
-        $this->album->setPhotoCount($this->album->getPhotoCount() + 1);
-        //update start and end date if the added photo is newere or older
-        if (is_null($this->album->getStartDateTime()) || $this->album->getStartDateTime()->getTimestamp() > $this->getDateTime()->getTimeStamp()
-        ) {
-            $this->album->setStartDateTime($this->getDateTime());
-        }
-
-        if (is_null($this->album->getEndDateTime()) || $this->album->getEndDateTime()->getTimestamp() < $this->getDateTime()->getTimeStamp()
-        ) {
-            $this->album->setEndDateTime($this->getDateTime());
-        }
-    }
-
-    /**
-     * Updates the photoCount in the album object.
-     *
-     * @ORM\PreRemove()
-     * @ORM\PreUpdate()
-     */
-    public function updateOnRemove()
-    {
-        $this->album->setPhotoCount($this->album->getPhotoCount() - 1);
-        /**
-         * TODO: possibly update the album start and end date after deleting an
-         * photo, this would however be a hassle to implement. It probably won't
-         * ever occur.
-         */
     }
 
     /**

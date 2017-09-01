@@ -3,18 +3,15 @@
 namespace Company\Model;
 
 use Doctrine\ORM\Mapping as ORM;
-//use Doctrine\Common\Collections\ArrayCollection;
-//use Zend\Permissions\Acl\Role\RoleInterface;
-//use Zend\Permissions\Acl\Resource\ResourceInterface;
+
 
 /**
  * Job model.
  *
  * @ORM\Entity
  */
-class Job //implements RoleInterface, ResourceInterface
+class Job
 {
-
     /**
      * The job id.
      *
@@ -32,11 +29,11 @@ class Job //implements RoleInterface, ResourceInterface
     protected $name;
 
     /**
-     * The job's ascii name.
+     * The job's slug name.
      *
      * @ORM\Column(type="string")
      */
-    protected $ascii_name;
+    protected $slugName;
     /**
      * The job's status.
      *
@@ -51,6 +48,20 @@ class Job //implements RoleInterface, ResourceInterface
      */
     protected $website;
 
+    /**
+     * The location(url) of an attachment describing the job.
+     *
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected $attachment;
+    
+    /**
+     * The job's contact's name.
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $contactName;
+    
     /**
      * The job's phone.
      *
@@ -72,21 +83,34 @@ class Job //implements RoleInterface, ResourceInterface
      */
     protected $description;
 
+
     /**
-     * The job's company.
+     * The job's timestamp.
      *
-     * @ORM\ManyToOne(targetEntity="Company", inversedBy="jobs")
+     * @ORM\Column(type="date")
      */
-    protected $company;
-
-
+    protected $timestamp;
 
     /**
-     * Constructor
+     * The job's language.
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $language;
+
+    /**
+     * The job's package.
+     *
+     * @ORM\ManyToOne(targetEntity="\Company\Model\CompanyJobPackage", inversedBy="jobs")
+     */
+    protected $package;
+
+    /**
+     * Constructor.
      */
     public function __construct()
     {
-        // todo
+        // noting to do
     }
 
     /**
@@ -109,19 +133,6 @@ class Job //implements RoleInterface, ResourceInterface
         return $this->name;
     }
 
-    public function getAsciiName()
-    {
-        return $this->asciiName;
-    }
-    /**
-     * Set the job's name.
-     *
-     * @param string $name
-     */
-    public function setAsciiName($name)
-    {
-        $this->asciiName = $name;
-    }
     /**
      * Set the job's name.
      *
@@ -133,19 +144,44 @@ class Job //implements RoleInterface, ResourceInterface
     }
 
     /**
+     * Get the job's slug name.
+     *
+     * @return string the Jobs slug name
+     */
+    public function getSlugName()
+    {
+        return $this->slugName;
+    }
+
+    /**
+     * Set the job's slug name.
+     *
+     * @param string $name
+     */
+    public function setSlugName($name)
+    {
+        $this->slugName = $name;
+    }
+
+    /**
      * Get the job's status.
      *
-     * @return boolean
+     * @return bool
      */
     public function getActive()
     {
         return $this->active;
     }
 
+    public function isActive()
+    {
+        return $this->getActive() and $this->getPackage()->isActive() && $this->getPackage()->getCompany()->isHidden();
+    }
+
     /**
      * Set the job's status.
      *
-     * @param boolean $active
+     * @param bool $active
      */
     public function setActive($active)
     {
@@ -172,6 +208,46 @@ class Job //implements RoleInterface, ResourceInterface
         $this->website = $website;
     }
 
+    /**
+     * Get the job's attachment.
+     *
+     * @return string
+     */
+    public function getAttachment()
+    {
+        return $this->attachment;
+    }
+
+    /**
+     * Set the job's attachment.
+     *
+     * @param string $attachment
+     */
+    public function setAttachment($attachment)
+    {
+        $this->attachment = $attachment;
+    }
+    
+    /**
+     * Get the job's contact's name.
+     *
+     * @return string
+     */
+    public function getContactName()
+    {
+        return $this->contactName;
+    }
+    
+    /**
+     * Set the job's contact's name.
+     *
+     * @param string $name
+     */
+    public function setContactName($name)
+    {
+        $this->contactName = $name;
+    }
+    
     /**
      * Get the job's phone.
      *
@@ -213,6 +289,25 @@ class Job //implements RoleInterface, ResourceInterface
     }
 
     /**
+     * Get the job's timestamp.
+     *
+     * @return date
+     */
+    public function getTimestamp()
+    {
+        return $this->description;
+    }
+
+    /**
+     * Set the job's timestamp.
+     *
+     * @param string $timestamp
+     */
+    public function setTimeStamp($timestamp)
+    {
+        $this->timestamp = $timestamp;
+    }
+    /**
      * Get the job's description.
      *
      * @return string
@@ -233,24 +328,52 @@ class Job //implements RoleInterface, ResourceInterface
     }
 
     /**
-     * Get the job's company.
+     * Get the job's language.
      *
-     * @return Company
+     * @return string language of the job
      */
-    public function getCompany()
+    public function getLanguage()
     {
-        return $this->company;
+        return $this->language;
     }
 
     /**
-     * Set the job's company.
+     * Set the job's language.
      *
-     * @param Company company
+     * @param string $language language of the job
      */
-    public function setCompany($company)
+    public function setLanguage($language)
     {
-        $this->company = $company;
+        $this->language = $language;
     }
 
+    /**
+     * Get the job's package.
+     *
+     * @return CompanyPackage
+     */
+    public function getPackage()
+    {
+        return $this->package;
+    }
 
+    /**
+     * Get the job's company
+     *
+     * @return company
+     */
+    public function getCompany()
+    {
+        return $this->getPackage()->getCompany();
+    }
+
+    /**
+     * Set the job's package.
+     *
+     * @param CompanyPackage $package the job's package
+     */
+    public function setPackage(CompanyPackage $package)
+    {
+        $this->package = $package;
+    }
 }

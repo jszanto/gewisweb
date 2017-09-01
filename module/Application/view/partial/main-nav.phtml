@@ -1,0 +1,216 @@
+<?php
+$lang = $this->plugin('translate')->getTranslator()->getLocale();
+?>
+<nav class="navbar navbar-gewis navbar-static-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header navbar-left pull-left">
+            <a href="<?= $this->url('home') ?>" class="navbar-brand">
+                <img src="<?= $this->basePath() ?>/img/gewis-branding.svg" alt="<?= $this->translate('GEWIS Logo') ?>">
+            </a>
+        </div>
+        <div class="navbar-header navbar-right pull-right">
+            <ul class="nav navbar-nav pull-left no-collapse">
+                <li class="dropdown pull-right">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-globe"></span>
+                        <span class="sr-only"><?= $this->translate('Language settings') ?></span>
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu language <?= ($lang == 'en') ? 'reverse' : ''?> ">
+                        <li>
+                            <a class="<?= ($lang == 'en') ? 'disabled' : '' ?>" href="<?= $this->url('lang', ['lang' => 'en']) ?>">
+                                <span class="flag-icon flag-icon-en" style="background-image: url('<?= $this->basePath() ?>/img/en.svg');"></span>English
+                            </a>
+                        </li>
+                        <li>
+                            <a class="<?= ($lang == 'nl') ? 'disabled' : '' ?>" href="<?= $this->url('lang', ['lang' => 'nl']) ?>">
+                                <span class="flag-icon flag-icon-nl" style="background-image: url('<?= $this->basePath() ?>/img/nl.svg');"></span>Nederlands
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <?php if (null === $this->identity()): ?>
+                    <li class="visible-xs pull-left">
+                        <a href="<?= $this->url('user') ?>">
+                            <span class="glyphicon glyphicon-user"></span>
+                            <span class="sr-only"><?= $this->translate('Login') ?></span>
+                        </a>
+                    </li>
+                    <li class="dropdown pull-left hidden-xs">
+                        <a href="<?= $this->url('user') ?>" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="glyphicon glyphicon-user"></span>
+                            <span class="sr-only"><?= $this->translate('Login') ?></span>
+                            <span class="caret"></span>
+                        </a>
+                        <div class="dropdown-menu dropdown-login">
+                            <form action="<?= $this->url('user') ?>" method="post">
+                                <div class="form-group">
+                                    <input type="text" name="login" class="form-control" placeholder="<?= $this->translate('Membership number or email address') ?>" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="password" name="password" class="form-control" placeholder="<?= $this->translate('Password') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <input type="hidden" name="remember" value="0"><input type="checkbox" name="remember" checked="checked" value="1">
+                                    Remember me
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block"><?= $this->translate('Login') ?></button>
+                                <p><?= $this->translate('Or go to the') ?> <a href="<?= $this->url('user/default', ['action' => 'register']) ?>"><?= $this->translate('registration page') ?></a></p>
+
+                                <input type="hidden" name="redirect" value="<?= $_SERVER['REQUEST_URI'] ?>">
+                            </form>
+                        </div>
+                    </li>
+                <?php else: ?>
+                    <?php $member = $this->identity()->getMember() ?>
+                    <li class="dropdown pull-right">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <?= $member->getFirstName() ?>
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="<?= $this->url('member/self') ?>"><?= $this->translate('My information') ?></a></li>
+                            <li><a href="https://gewis.nl/susos/account/websitelogin.php"><?= $this->translate('SuSOS') ?></a></li>
+                            <li><a href="<?= $this->url('user/default', ['action' => 'password']) ?>"><?= $this->translate('Change password') ?></a></li>
+                            <?php if ($this->acl('decision_acl')->isAllowed('organ', 'edit')): ?>
+                                <li><a href="<?= $this->url('admin') ?>"><?= $this->translate('Admin') ?></a></li>
+                            <?php endif; ?>
+                            <li><a href="<?= $this->url('user/default', [
+                                    'action' => 'logout'
+                                ]) ?>"><?= $this->translate('Logout') ?></a></li>
+                        </ul>
+                    </li>
+                <?php endif; ?>
+            </ul>
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only"><?= $this->translate('Toggle navigation') ?></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="visible-xs-block clearfix"></div>
+        <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li class="dropdown dropdown-hover <?= $this->moduleIsActive(['frontpage', 'page']) ? 'active default' : '' ?>">
+                    <a href="<?= $this->url('home/page', ['category' => 'vereniging']) ?>" role="button"
+                       class="dropdown-toggle visible-sm visible-xs" data-toggle="dropdown" aria-haspopup="true"
+                       aria-expanded="false">
+                        <?= $this->translate('Association') ?>
+                        <span class="caret"></span>
+                    </a>
+                    <a href="<?= $this->url('home/page', ['category' => 'vereniging']) ?>" role="button"
+                       class="hidden-sm hidden-xs">
+                        <?= $this->translate('Association') ?>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="visible-sm visible-xs">
+                            <a href="<?= $this->url('home/page', ['category' => 'vereniging']) ?>">
+                                <?= $this->translate('Association') ?>
+                            </a>
+                        </li>
+                        <li><a href="<?= $this->url('home/page', ['category' => 'vereniging', 'sub_category' => 'av']) ?>"><?= $this->translate('General Meeting') ?></a></li>
+                        <li><a href="<?= $this->url('home/page', ['category' => 'vereniging', 'sub_category' => 'bestuur']) ?>"><?= $this->translate('Board 2015/2016') ?></a></li>
+                        <li><a href="<?= $this->url('home/committee_list') ?>"><?= $this->translate('Committees') ?></a></li>
+                        <li><a href="<?= $this->url('home/fraternity_list') ?>"><?= $this->translate('Fraternities') ?></a></li>
+                        <li><a href="<?= $this->url('home/page', ['category' => 'vereniging', 'sub_category' => 'lied']) ?>"><?= $this->translate('GEWIS song') ?></a></li>
+                        <li><a href="<?= $this->url('home/page', ['category' => 'vereniging', 'sub_category' => 'statuten']) ?>"><?= $this->translate('Regulations') ?></a></li>
+                        <li><a href="<?= $this->url('home/page', ['category' => 'vereniging', 'sub_category' => 'contact']) ?>"><?= $this->translate('Contact') ?></a></li>
+                        <li><a href="<?= $this->url('home/page', ['category' => 'links']) ?>"><?= $this->translate('Links') ?></a></li>
+                    </ul>
+                </li>
+                <li class="dropdown dropdown-hover <?= $this->moduleIsActive(['company']) ? 'active default' : '' ?>">
+                    <a href="<?= $this->url('company') ?>" role="button" aria-haspopup="true" aria-expanded="false"
+                       class="dropdown-toggle visible-sm visible-xs" data-toggle="dropdown">
+                        <?= $this->translate('Companies') ?>
+                        <span class="caret"></span>
+                    </a>
+                    <a href="<?= $this->url('company') ?>" role="button" class="hidden-sm hidden-xs">
+                        <?= $this->translate('Companies') ?>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="visible-sm visible-xs">
+                            <a href="<?= $this->url('company') ?>">
+                                <?= $this->translate('Companies') ?>
+                            </a>
+                        </li>
+                        <?php if (!is_null($this->featuredCompanyPackage())): ?>
+                            <li>
+                                <a href="<?= $this->url('company/spotlight') ?>">
+                                    <span class="glyphicon glyphicon-star"></span>
+                                    <?= $this->translate('Featured') ?>:
+                                    <?= $this->featuredCompanyPackage()->getCompany()->getName() ?>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <li><a href="<?= $this->url('company/jobList') ?>"><?= $this->translate('Jobs') ?></a></li>
+                    </ul>
+                </li>
+                <li class="<?= $this->moduleIsActive(['education']) ? 'active' : '' ?>">
+                    <a href="<?= $this->url('education') ?>">
+                        <?= $this->translate('Education') ?>
+                    </a>
+                </li>
+                <li class="dropdown dropdown-hover <?= $this->moduleIsActive(['activity']) ? 'active default' : '' ?>">
+                    <a href="<?= $this->url('activity') ?>" role="button" aria-haspopup="true" aria-expanded="false"
+                       class="dropdown-toggle visible-sm visible-xs" data-toggle="dropdown">
+                        <?= $this->translate('Activities') ?>
+                        <span class="caret"></span>
+                    </a>
+                    <a href="<?= $this->url('activity') ?>" role="button" class="hidden-sm hidden-xs">
+                        <?= $this->translate('Activities') ?>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="visible-sm visible-xs">
+                            <a href="<?= $this->url('activity') ?>">
+                                <?= $this->translate('Activities') ?>
+                            </a>
+                        </li>
+                        <?php if ($this->acl('activity_acl')->isAllowed('activity', 'view')): ?>
+                            <li><a href="<?= $this->url('activity/archive') ?>"> <?= $this->translate('Activity Archive') ?></a></li>
+                        <?php endif; ?>
+                        <?php if ($this->acl('activity_acl')->isAllowed('activity', 'create')): ?>
+                            <li><a href="<?= $this->url('activity/create') ?>"> <?= $this->translate('Create an activity') ?></a></li>
+                        <?php endif; ?>
+                        <?php if ($this->acl('activity_acl')->isAllowed('activity', 'create')): ?>
+                            <li><a href="<?= $this->url('activity_calendar') ?>"> <?= $this->translate('Option
+                            calendar') ?></a></li>
+                        <?php endif; ?>
+                        <li><a href="<?= $this->url('activity/career') ?>"> <?= $this->translate('Career related') ?></a></li>
+                    </ul>
+                </li>
+                <li class="dropdown dropdown-hover <?= $this->moduleIsActive(['photo']) ? 'active' : '' ?>">
+                    <?php if ($this->acl('photo_acl')->isAllowed('photo','view')): ?>
+                        <a href="<?= $this->url('photo') ?>" role="button" aria-haspopup="true" aria-expanded="false"
+                           class="dropdown-toggle visible-sm visible-xs" data-toggle="dropdown">
+                            <?= $this->translate('Photos') ?>
+                            <span class="caret"></span>
+                        </a>
+                        <a href="<?= $this->url('photo') ?>" role="button" class="hidden-sm hidden-xs">
+                            <?= $this->translate('Photos') ?>
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= $this->url('photo') ?>">
+                            <?= $this->translate('Photos') ?>
+                        </a>
+                    <?php endif; ?>
+                    <?php if ($this->acl('photo_acl')->isAllowed('photo','view')): ?>
+                        <ul class="dropdown-menu">
+                            <li class="visible-sm visible-xs">
+                                <a href="<?= $this->url('photo') ?>">
+                                    <?= $this->translate('Photos') ?>
+                                </a>
+                            </li>
+                            <li><a href="<?= $this->url('photo/weekly') ?>"><?= $this->translate('Photo of the week') ?></a></li>
+                        </ul>
+                    <?php endif;?>
+                </li>
+            </ul>
+            <?php if (null != $this->identity()): ?>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="<?= $this->moduleIsActive(['decision']) ? 'active' : '' ?>"><a href="<?= $this->url('member') ?>"><?= $this->translate('Members') ?></a></li>
+            </ul>
+            <?php endif; ?>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>

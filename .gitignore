@@ -10,3 +10,11 @@ nbproject
 .settings
 vendor/
 gewisweb-vagrant/
+node_modules/
+.sass-cache/
+public/css/gewis-theme.css
+public/css/gewis-theme.css.map
+public/styleguide/
+autoload_classmap.php
+.mysql
+.vagrant/

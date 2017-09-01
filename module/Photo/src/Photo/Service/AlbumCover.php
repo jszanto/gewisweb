@@ -23,11 +23,9 @@ class AlbumCover extends AbstractService
         $cover = $this->generateCover($album);
         $tempFileName = sys_get_temp_dir() . '/CoverImage' . rand() . '.png';
         $cover->writeImage($tempFileName);
-        $newPath = $this->getPhotoService()->generateStoragePath($tempFileName);
-        $config = $this->getConfig();
-        rename($tempFileName, $config['upload_dir'] . '/' . $newPath);
+        $path = $this->getFileStorageService()->storeFile($tempFileName, false);
 
-        return $newPath;
+        return $path;
     }
 
     /**
@@ -73,18 +71,6 @@ class AlbumCover extends AbstractService
     }
 
     /**
-     * Get the photo config, as used by this service.
-     *
-     * @return array containing the config for the module
-     */
-    public function getConfig()
-    {
-        $config = $this->sm->get('config');
-
-        return $config['photo'];
-    }
-
-    /**
      * Returns the images needed to fill the album cover
      *
      * @param \Photo\Model\Album $album
@@ -94,32 +80,23 @@ class AlbumCover extends AbstractService
      */
     protected function getImages($album, $count)
     {
-        $mapper = $this->getAlbumMapper();
-        $config = $this->getConfig();
-        $photos = $mapper->getRandomAlbumPhotos($album, $count);
+        $albumMapper = $this->getAlbumMapper();
+        $photoMapper = $this->getPhotoMapper();
+        $storageConfig = $this->getStorageConfig();
+        $photos = $photoMapper->getRandomAlbumPhotos($album, $count);
         //retrieve more photo's from subalbums
-        foreach ($mapper->getSubAlbums($album) as $subAlbum) {
+        foreach ($albumMapper->getSubAlbums($album) as $subAlbum) {
             $needed = $count - count($photos);
-            $photos = array_merge($photos, $mapper->getRandomAlbumPhotos($subAlbum, $needed));
+            $photos = array_merge($photos, $photoMapper->getRandomAlbumPhotos($subAlbum, $needed));
         }
         //convert the photo objects to Imagick objects
-        $images = array();
+        $images = [];
         foreach ($photos as $photo) {
-            $imagePath = $config['upload_dir'] . '/' . $photo->getSmallThumbPath();
+            $imagePath = $storageConfig['storage_dir'] . '/' . $photo->getSmallThumbPath();
             $images[] = new \Imagick($imagePath);
         }
 
         return $images;
-    }
-
-    /**
-     * Get the album mapper.
-     *
-     * @return \Photo\Mapper\Album
-     */
-    public function getAlbumMapper()
-    {
-        return $this->sm->get('photo_mapper_album');
     }
 
     /**
@@ -195,6 +172,27 @@ class AlbumCover extends AbstractService
         return $image;
     }
 
+
+    /**
+     * Get the album mapper.
+     *
+     * @return \Photo\Mapper\Album
+     */
+    public function getAlbumMapper()
+    {
+        return $this->sm->get('photo_mapper_album');
+    }
+
+    /**
+     * Get the photo mapper.
+     *
+     * @return \Photo\Mapper\Photo
+     */
+    public function getPhotoMapper()
+    {
+        return $this->sm->get('photo_mapper_photo');
+    }
+
     /**
      * Gets the photo service.
      *
@@ -202,7 +200,46 @@ class AlbumCover extends AbstractService
      */
     public function getPhotoService()
     {
-        return $this->getServiceManager()->get("photo_service_photo");
+        return $this->sm->get("photo_service_photo");
+    }
+
+    /**
+     * Gets the photo admin service.
+     *
+     * @return \Photo\Service\Admin
+     */
+    public function getAdminService()
+    {
+        return $this->sm->get("photo_service_admin");
+    }
+
+    /**
+     * Gets the storage service.
+     *
+     * @return \Application\Service\Storage
+     */
+    public function getFileStorageService()
+    {
+        return $this->sm->get('application_service_storage');
+    }
+
+    /**
+     * Get the photo config, as used by this service.
+     *
+     * @return array containing the config for the module
+     */
+    public function getConfig()
+    {
+        $config = $this->sm->get('config');
+
+        return $config['photo'];
+    }
+
+    public function getStorageConfig()
+    {
+        $config = $this->sm->get('config');
+
+        return $config['storage'];
     }
 
 }

@@ -10,15 +10,22 @@ class PhotoController extends AbstractActionController
 
     public function indexAction()
     {
-        $albums = $this->getAlbumService()->getAlbums();
         //add any other special behavior which is required for the main photo page here later
+        $years = $this->getAlbumService()->getAlbumYears();
+        $year = $this->params()->fromRoute('year');
+        // If no year is supplied, use the latest year.
+        if (is_null($year)) {
+            $year = max($years);
+        } else {
+            $year = (int)$year;
+        }
+        $albums = $this->getAlbumService()->getAlbumsByYear($year);
 
-        $basedir = $this->getPhotoService()->getBaseDirectory();
-
-        return new ViewModel(array(
-            'albums' => $albums,
-            'basedir' => $basedir
-        ));
+        return new ViewModel([
+            'activeYear' => $year,
+            'years' => $years,
+            'albums' => $albums
+        ]);
     }
 
     /**
@@ -34,7 +41,28 @@ class PhotoController extends AbstractActionController
             return $this->notFoundAction();
         }
 
+        $this->getPhotoService()->countHit($photoData['photo']);
+
         return new ViewModel($photoData);
+    }
+
+    public function downloadAction()
+    {
+        $photoId = $this->params()->fromRoute('photo_id');
+
+        return $this->getPhotoService()->getPhotoDownload($photoId);
+    }
+
+    /**
+     * Display the page containing previous pictures of the week.
+     */
+    public function weeklyAction()
+    {
+        $weeklyPhotos = $this->getPhotoService()->getPhotosOfTheWeek();
+
+        return new ViewModel([
+            'weeklyPhotos' => $weeklyPhotos
+        ]);
     }
 
     /**

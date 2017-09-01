@@ -22,10 +22,12 @@ class Email extends AbstractService
      */
     public function sendRegisterEmail(NewUserModel $newUser, MemberModel $member)
     {
-        $body = $this->render('user/email/register', array(
+        $body = $this->render('user/email/register', [
             'user' => $newUser,
             'member' => $member
-        ));
+        ]);
+
+        $translator = $this->getServiceManager()->get('translator');
 
         $message = new Message();
 
@@ -33,6 +35,34 @@ class Email extends AbstractService
 
         $message->addFrom($config['from']);
         $message->addTo($newUser->getEmail());
+        $message->setSubject($translator->translate('Account activation code for the GEWIS Website'));
+        $message->setBody($body);
+
+        $this->getTransport()->send($message);
+    }
+
+    /**
+     * Send password lost email.
+     *
+     * @param NewUserModel $activation
+     * @param MemberModel $member
+     */
+    public function sendPasswordLostMail(NewUserModel $newUser, MemberModel $member)
+    {
+        $body = $this->render('user/email/reset', [
+            'user' => $newUser,
+            'member' => $member
+        ]);
+
+        $translator = $this->getServiceManager()->get('translator');
+
+        $message = new Message();
+
+        $config = $this->getConfig();
+
+        $message->addFrom($config['from']);
+        $message->addTo($newUser->getEmail());
+        $message->setSubject($translator->translate('Password reset code for the GEWIS Website'));
         $message->setBody($body);
 
         $this->getTransport()->send($message);

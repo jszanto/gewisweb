@@ -3,18 +3,15 @@
 namespace Company\Model;
 
 use Doctrine\ORM\Mapping as ORM;
-//use Doctrine\Common\Collections\ArrayCollection;
-//use Zend\Permissions\Acl\Role\RoleInterface;
-//use Zend\Permissions\Acl\Resource\ResourceInterface;
+use Doctrine\Common\Collections\ArrayCollection as ArrayCollection;
 
 /**
  * Company model.
  *
  * @ORM\Entity
  */
-class Company //implements RoleInterface, ResourceInterface
+class Company // implements ArrayHydrator (for zend2 form)
 {
-
     /**
      * The company id.
      *
@@ -25,6 +22,14 @@ class Company //implements RoleInterface, ResourceInterface
     protected $id;
 
     /**
+     * Translations of details of the company.
+     * Are of type \Company\Model\CompanyI18n.
+     *
+     * @ORM\OneToMany(targetEntity="\Company\Model\CompanyI18n", mappedBy="company", cascade={"persist", "remove"})
+     */
+    protected $translations;
+
+    /**
      * The company's display name.
      *
      * @ORM\Column(type="string")
@@ -32,11 +37,18 @@ class Company //implements RoleInterface, ResourceInterface
     protected $name;
 
     /**
-     * The company's ascii version of the name. (username)
+     * The company's slug version of the name. (username).
      *
      * @ORM\Column(type="string")
      */
-    protected $asciiName;
+    protected $slugName;
+    
+    /**
+     * The company's contact's name.
+     *
+     * @ORM\Column(type="string")
+     */
+    protected $contactName;
 
     /**
      * The company's address.
@@ -44,20 +56,6 @@ class Company //implements RoleInterface, ResourceInterface
      * @ORM\Column(type="string")
      */
     protected $address;
-
-    /**
-     * The company's website.
-     *
-     * @ORM\Column(type="string")
-     */
-    protected $website;
-
-    /**
-     * The company's slogan.
-     *
-     * @ORM\Column(type="string")
-     */
-    protected $slogan;
 
     /**
      * The company's email.
@@ -74,33 +72,26 @@ class Company //implements RoleInterface, ResourceInterface
     protected $phone;
 
     /**
-     * The company's logo.
+     * Whether the company is hidden.
      *
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="boolean")
      */
-    protected $logo;
+    protected $hidden;
 
     /**
-     * The company's (HTML) description.
+     * The company's packages.
      *
-     * @ORM\Column(type="text")
+     * @ORM\OneToMany(targetEntity="\Company\Model\CompanyPackage", mappedBy="company", cascade={"persist", "remove"})
      */
-    protected $description;
+    protected $packages;
 
     /**
-     * The company's jobs.
-     *
-     * @ORM\OneToMany(targetEntity="Job", mappedBy="company")
-     */
-    protected $jobs;
-
-
-    /**
-     * Constructor
+     * Constructor.
      */
     public function __construct()
     {
-        // todo
+        $this->packages = new ArrayCollection();
+        $this->translations = new ArrayCollection();
     }
 
     /**
@@ -113,15 +104,40 @@ class Company //implements RoleInterface, ResourceInterface
         return $this->id;
     }
 
-    public function getAsciiName()
+    /**
+     * Get the company's translations.
+     *
+     * @return array
+     */
+    public function getTranslations()
     {
-        return $this->asciiName;
+        if (!is_null($this->translations)) {
+            return $this->translations;
+        }
+
+        return [];
     }
 
-    public function setAsciiName($asciiName)
+    /**
+     * Add a translation.
+     *
+     * @param CompanyI18n $translation
+     */
+    public function addTranslation(CompanyI18n $translation)
     {
-        $this->asciiName = $asciiName;
+        $this->translations->add($translation);
     }
+
+    /**
+     * Remove a translation.
+     *
+     * @param CompanyI18n $translation Translation to remove
+     */
+    public function removeTranslation(CompanyI18n $translation)
+    {
+        $this->translations->removeElement($translation);
+    }
+
     /**
      * Get the company's name.
      *
@@ -143,6 +159,46 @@ class Company //implements RoleInterface, ResourceInterface
     }
 
     /**
+     * Gets the company's slug name.
+     *
+     * @return string the company's slug name
+     */
+    public function getSlugName()
+    {
+        return $this->slugName;
+    }
+
+    /**
+     * Sets the company's slug name.
+     *
+     * @param string $slugName the new slug name
+     */
+    public function setSlugName($slugName)
+    {
+        $this->slugName = $slugName;
+    }
+    
+    /**
+     * Get the company's contact's name.
+     *
+     * @return string
+     */
+    public function getContactName()
+    {
+        return $this->contactName;
+    }
+    
+    /**
+     * Set the company's contact's name.
+     *
+     * @param string $name
+     */
+    public function setContactName($name)
+    {
+        $this->contactName = $name;
+    }
+
+    /**
      * Get the company's address.
      *
      * @return string
@@ -160,46 +216,6 @@ class Company //implements RoleInterface, ResourceInterface
     public function setAddress($address)
     {
         $this->address = $address;
-    }
-
-    /**
-     * Get the company's website.
-     *
-     * @return string
-     */
-    public function getWebsite()
-    {
-        return $this->website;
-    }
-
-    /**
-     * Set the company's website.
-     *
-     * @param string $website
-     */
-    public function setWebsite($website)
-    {
-        $this->website = $website;
-    }
-
-    /**
-     * Get the company's slogan.
-     *
-     * @return string
-     */
-    public function getSlogan()
-    {
-        return $this->slogan;
-    }
-
-    /**
-     * Set the company's slogan.
-     *
-     * @param string $slogan
-     */
-    public function setSlogan($slogan)
-    {
-        $this->slogan = $slogan;
     }
 
     /**
@@ -243,63 +259,284 @@ class Company //implements RoleInterface, ResourceInterface
     }
 
     /**
-     * Get the company's logo.
      *
-     * @return string
+     * Return true if the company should not be visible to the user, and false if it should be visible to the user
+     *
      */
-    public function getLogo()
+
+    public function isHidden()
     {
-        return $this->logo;
+        $visible = false;
+
+        // When any packages is not expired, the company should be shown to the user
+        foreach($this->getPackages() as $package) {
+            if(!$package->isExpired(new \DateTime)){
+                $visible = true;
+            }
+        }
+
+        // Except when it is explicitly marked as hidden.
+        return $visible && !$this->getHidden();
+    }
+    /**
+     * Get the company's hidden status.
+     *
+     * @return bool
+     */
+    public function getHidden()
+    {
+        return $this->hidden;
+        // TODO check whether package is not expired
     }
 
     /**
-     * Set the company's logo.
+     * Set the company's hidden status.
      *
-     * @param string $logo
+     * @param string $hidden
      */
-    public function setLogo($logo)
+    public function setHidden($hidden)
     {
-        $this->logo = $logo;
+        $this->hidden = $hidden;
     }
 
     /**
-     * Get the company's description.
+     * Get the company's packages.
      *
-     * @return string
+     * @return CompanyPackages
      */
-    public function getDescription()
+    public function getPackages()
     {
-        return $this->description;
+        return $this->packages;
+    }
+
+    
+    /**
+     * Get the number of packages.
+     *
+     * @return the number of packages
+     */
+    public function getNumberOfPackages()
+    {
+        return count($this->packages);
+    }
+    /**
+     * Returns the number of jobs that are contained in all packages of this
+     * company.
+     *
+     */
+    public function getNumberOfJobs()
+    {
+        $jobCount = function ($package) {
+            if ($package->getType() == 'job') {
+                return $package->getJobs()->count();
+            }
+            return 0;
+        };
+
+        return array_sum(array_map($jobCount, $this->getPackages()->toArray()));
     }
 
     /**
-     * Set the company's description.
+     * Returns the number of jobs that are contained in all active packages of this
+     * company.
      *
-     * @param string $description
      */
-    public function setDescription($description)
+    public function getNumberOfActiveJobs()
     {
-        $this->description = $description;
+        $jobCount = function ($package) {
+            return $package->getNumberOfActiveJobs();
+        };
+
+        return array_sum(array_map($jobCount, $this->getPackages()->toArray()));
     }
 
     /**
-     * Get the company's jobs.
+     * Returns the number of expired packages
      *
-     * @return Job[]
      */
-    public function getJobs()
+    public function getNumberOfExpiredPackages()
     {
-        return $this->jobs;
+        return count(array_filter($this->getPackages()->toArray(), function ($package) {
+            return $package->isExpired(new \DateTime);
+        }));
     }
 
     /**
-     * Set the company's jobs.
+     * Returns true if a banner is active, and false when there is no banner active
      *
-     * @param Job[] $jobs
      */
-    public function setJobs($jobs)
+    public function getFeaturedLanguages()
     {
-        $this->jobs = $jobs;
+        return array_map(
+            function ($package) {
+                return $package->getLanguage();
+            },
+            array_filter($this->getPackages()->toArray(), function ($package) {
+                return $package->getType() === 'featured' && $package->isActive();
+
+            })
+        );
     }
 
+    /**
+     * Returns true if a banner is active, and false when there is no banner active
+     *
+     */
+    public function isBannerActive()
+    {
+        $banners = array_filter($this->getPackages()->toArray(), function ($package) {
+            return $package->getType() === 'banner' && $package->isActive();
+
+        });
+
+        return !empty($banners);
+    }
+
+
+    /**
+     * Get the company's language.
+     *
+     * @return Integer
+     */
+    public function getLanguageNeutralId()
+    {
+        return $this->languageNeutralId;
+    }
+    /**
+     * Set the company's language neutral id.
+     *
+     * @param Integer $languageNeutralId
+     */
+    public function setLanguageNeutralId($language)
+    {
+        $this->languageNeutralId = $language;
+    }
+
+    
+    /**
+     * If this object contains an translation for a given locale, it is returned, otherwise null is returned
+     *
+     */
+    public function getTranslationFromLocale($locale)
+    {
+        $translation = null;
+
+        $companyLanguages = $this->getTranslations()->map(function ($value) {
+                    return $value->getLanguage();
+                });
+
+        if ($companyLanguages->contains($locale)) {
+            $translation = $this->getTranslations()[$companyLanguages->indexOf($locale)];
+        }
+
+        return $translation;
+    }
+
+    /**
+     * Updates the variable if the first argument is set, Otherwise, it will
+     * use the second argument.
+     *
+     * @param mixed $object
+     * @param mixed $default
+     */
+    private function updateIfSet($object, $default)
+    {
+        if (isset($object)) {
+            return $object;
+        }
+        return $default;
+    }
+    /**
+     * Returns the translation identified by $language
+     *
+     * Note, does not set $logo, the user should set this property himself
+     *
+     * @param mixed $data
+     * @param mixed $language
+     */
+    public function getTranslationFromArray($data, $language)
+    {
+
+        if ($language !== '') {
+            $translation = $this->getTranslationFromLocale($language);
+            if (is_null($translation)){
+
+                $translation = new CompanyI18n($language, $this);
+            }
+            $language = $language.'_';
+
+            // Translated properties
+            $translation->setWebsite($this->updateIfSet($data[($language).'website'], ''));
+            $translation->setSlogan($this->updateIfSet($data[$language.'slogan'], ''));
+            $translation->setDescription($this->updateIfSet($data[$language.'description'], ''));
+
+            // Do not set logo, because most likely, $data[logo] is bogus.
+            // Instead, the user should set this property himself later.
+            return $translation;
+        }
+    }
+
+    /**
+     * Updates this object with values in the form of getArrayCopy()
+     *
+     */
+    public function exchangeArray($data)
+    {
+        $languages = $data['languages'];
+
+        $newTranslations = new ArrayCollection();
+
+        foreach ($languages as $language) {
+            $newTranslationObject = $this->getTranslationFromArray($data,$language);
+            $newTranslations->add($newTranslationObject);
+        }
+
+        // Delete old translations
+        foreach ($this->getTranslations() as $translation) {
+            if (!$newTranslations->contains($translation)) {
+                $translation->remove();
+            }
+        }
+        $this->setName($this->updateIfSet($data['name'],''));
+        $this->setContactName($this->updateIfSet($data['contactName'], ''));
+        $this->setSlugName($this->updateIfSet($data['slugName'], ''));
+        $this->setAddress($this->updateIfSet($data['address'],  ''));
+        $this->setEmail($this->updateIfSet($data['email'],''));
+        $this->setPhone($this->updateIfSet($data['phone'],''));
+        $this->setHidden($this->updateIfSet($data['hidden'],''));
+        $this->translations = $newTranslations;
+    }
+
+    /**
+     * Returns an array copy with varName=> var for all variables except the
+     * translation.
+     *
+     * It will aso add keys in the form $lan_varName=>$this->getTranslationFromLocale($lang)=>var
+     *
+     */
+    public function getArrayCopy()
+    {
+
+        $arraycopy = [];
+        $arraycopy['id'] = $this->getID();
+        $arraycopy['name'] = $this->getName();
+        $arraycopy['slugName'] = $this->getSlugName();
+        $arraycopy['contactName'] = $this->getContactName();
+        $arraycopy['email'] = $this->getEmail();
+        $arraycopy['address'] = $this->getAddress();
+        $arraycopy['phone'] = $this->getPhone();
+        $arraycopy['hidden'] = $this->getHidden();
+
+        // Languages
+        $arraycopy['languages'] = [];
+        foreach ($this->getTranslations() as $translation) {
+            $arraycopy[$translation->getLanguage().'_'.'slogan'] = $translation->getSlogan();
+            $arraycopy[$translation->getLanguage().'_'.'website'] = $translation->getWebsite();
+            $arraycopy[$translation->getLanguage().'_'.'description'] = $translation->getDescription();
+            $arraycopy[$translation->getLanguage().'_'.'logo'] = $translation->getLogo();
+            $arraycopy['languages'][] = $translation->getLanguage();
+        }
+
+        return $arraycopy;
+    }
 }

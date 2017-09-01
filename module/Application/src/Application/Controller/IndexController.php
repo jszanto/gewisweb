@@ -15,10 +15,6 @@ use Zend\Session\Container as SessionContainer;
 
 class IndexController extends AbstractActionController
 {
-    public function indexAction()
-    {
-        return new ViewModel();
-    }
 
     /**
      * Action to switch language.
@@ -32,6 +28,11 @@ class IndexController extends AbstractActionController
             $session->lang = 'nl';
         }
 
+        if (isset($_SERVER['HTTP_REFERER'])) {
+            return $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+        }
+
         return $this->redirect()->toRoute('home');
+
     }
 }

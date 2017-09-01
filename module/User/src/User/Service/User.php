@@ -2,20 +2,20 @@
 
 namespace User\Service;
 
-use Application\Service\AbstractService;
+use Application\Service\AbstractAclService;
 
 use User\Model\User as UserModel;
 use User\Model\NewUser as NewUserModel;
+use User\Model\LoginAttempt as LoginAttemptModel;
 use User\Mapper\User as UserMapper;
-
+use User\Model\Session as SessionModel;
+use User\Permissions\NotAllowedException;
 use User\Form\Register as RegisterForm;
-
-use Decision\Model\Member as MemberModel;
 
 /**
  * User service.
  */
-class User extends AbstractService
+class User extends AbstractAclService
 {
 
     /**
@@ -40,10 +40,16 @@ class User extends AbstractService
 
         $bcrypt = $this->sm->get('user_bcrypt');
 
-        // create a new user from this data, and insert it into the database
-        $user = new UserModel($newUser);
+        // first try to obtain the user
+        $user = $this->getUserMapper()->findByLidnr($newUser->getLidnr());
+        if (null === $user) {
+            // create a new user from this data, and insert it into the database
+            $user = new UserModel($newUser);
+        }
+
         $user->setPassword($bcrypt->create($data['password']));
 
+        // this will also save a user with a lost password
         $this->getUserMapper()->createUser($user, $newUser);
 
         return true;
@@ -73,12 +79,14 @@ class User extends AbstractService
 
         if (null === $member) {
             $form->setError(RegisterForm::ERROR_MEMBER_NOT_EXISTS);
+
             return null;
         }
 
         // check if the email is the same
         if ($member->getEmail() != $data['email']) {
             $form->setError(RegisterForm::ERROR_WRONG_EMAIL);
+
             return null;
         }
 
@@ -86,6 +94,7 @@ class User extends AbstractService
         $user = $this->getUserMapper()->findByLidnr($member->getLidnr());
         if (null !== $user) {
             $form->setError(RegisterForm::ERROR_USER_ALREADY_EXISTS);
+
             return null;
         }
 
@@ -96,7 +105,101 @@ class User extends AbstractService
         $this->getNewUserMapper()->persist($newUser);
 
         $this->getEmailService()->sendRegisterEmail($newUser, $member);
+
         return $newUser;
+    }
+
+    /**
+     * Request a password reset.
+     *
+     * Will also send an email to the user.
+     *
+     * @param array $data Reset data
+     *
+     * @return UserModel User. Null when the password could not be reset.
+     */
+    public function reset($data)
+    {
+        $form = $this->getPasswordResetForm();
+        $form->setData($data);
+
+        if (!$form->isValid()) {
+            return null;
+        }
+
+        // get the member
+        $data = $form->getData();
+        $member = $this->getMemberMapper()->findByLidnr($data['lidnr']);
+
+        // check if the member has a corresponding user.
+        $user = $this->getUserMapper()->findByLidnr($member->getLidnr());
+        if (null === $user) {
+            $form->setError(RegisterForm::ERROR_MEMBER_NOT_EXISTS);
+
+            return null;
+        }
+
+        // Invalidate all previous password reset codes
+        // Makes sure that no double password reset codes are present in the database
+        $this->getNewUserMapper()->deleteByMember($member);
+
+        // create new activation
+        $newUser = new NewUserModel($member);
+        $newUser->setCode($this->generateCode());
+
+        $this->getNewUserMapper()->persist($newUser);
+
+        $this->getEmailService()->sendPasswordLostMail($newUser, $member);
+
+        return $user;
+    }
+
+    /**
+     * Change the password of a user.
+     *
+     * @param array $data Passworc change date
+     *
+     * @return boolean
+     */
+    public function changePassword($data)
+    {
+        $form = $this->getPasswordForm();
+
+        $form->setData($data);
+
+        if (!$form->isValid()) {
+            return false;
+        }
+
+        $data = $form->getData();
+
+        // check the password
+        $auth = $this->getServiceManager()->get('user_auth_service');
+        $adapter = $auth->getAdapter();
+
+        $user = $auth->getIdentity();
+
+        if (!$adapter->verifyPassword($data['old_password'], $user->getPassword())) {
+            $form->setMessages([
+                'old_password' => [
+                    $this->getTranslator()->translate("Password incorrect")
+                ]
+            ]);
+
+            return false;
+        }
+
+        $mapper = $this->getUserMapper();
+        $bcrypt = $this->sm->get('user_bcrypt');
+
+        // get the actual user and save
+        $actUser = $mapper->findByLidnr($user->getLidnr());
+
+        $actUser->setPassword($bcrypt->create($data['password']));
+
+        $mapper->persist($actUser);
+
+        return true;
     }
 
     /**
@@ -127,6 +230,39 @@ class User extends AbstractService
         // process the result
         if (!$result->isValid()) {
             $form->setResult($result);
+
+            return null;
+        }
+
+        $this->getAuthStorage()->setRememberMe($data['remember']);
+        $user = $auth->getIdentity();
+
+        return $user;
+    }
+
+    /**
+     * Login using a pin code.
+     *
+     * @param array $data
+     * @return UserModel Authenticated user. Null if not authenticated.
+     */
+    public function pinLogin($data)
+    {
+        if (!$this->isAllowed('pin_login')) {
+            throw new \User\Permissions\NotAllowedException(
+                $this->getTranslator()->translate('You are not allowed to login using pin codes')
+            );
+        }
+        // try to authenticate
+        $auth = $this->getServiceManager()->get('user_pin_auth_service');
+        $authAdapter = $auth->getAdapter();
+
+        $authAdapter->setCredentials($data['lidnr'], $data['pincode']);
+
+        $result = $auth->authenticate();
+
+        // process the result
+        if (!$result->isValid()) {
             return null;
         }
 
@@ -135,26 +271,69 @@ class User extends AbstractService
 
     /**
      * Log the user out.
-     *
-     * @param array $data Logout data
-     *
-     * @return boolean If the user was logged out
      */
-    public function logout($data)
+    public function logout()
     {
-        $form = $this->getLogoutForm();
-        $form->setData($data);
-
-        // if the form isn't valid, the user doesn't want to logout
-        if (!$form->isValid()) {
-            return false;
-        }
-
         // clear the user identity
         $auth = $this->getServiceManager()->get('user_auth_service');
         $auth->clearIdentity();
+    }
 
-        return true;
+    /**
+     * Gets the user identity, or gives a 403 if the user is not logged in
+     *
+     * @return User the current logged in user
+     * @throws NotAllowedException if no user is logged in
+     */
+    public function getIdentity()
+    {
+        $authService = $this->getServiceManager()->get('user_auth_service');
+        if (!$authService->hasIdentity()) {
+            $translator = $this->getServiceManager()->get('translator');
+            throw new NotAllowedException(
+                $translator->translate('You need to log in to perform this action')
+            );
+        }
+        return $authService->getIdentity();
+    }
+
+    public function detachUser($user)
+    {
+        /*
+         * Yes, this is some sort of horrible hack to make the entity manager happy again. If anyone wants to waste
+         * their day figuring out what kind of dark magic is upsetting the entity manager here, be my guest.
+         * This hack only is needed when we want to flush the entity manager during login.
+         */
+        $this->sm->get('user_doctrine_em')->clear();
+
+        return $this->getUserMapper()->findByLidnr($user->getLidnr());
+    }
+
+    public function logFailedLogin($user, $type)
+    {
+        $attempt = new LoginAttemptModel();
+        $attempt->setIp($this->sm->get('user_remoteaddress'));
+        $attempt->setTime(new \DateTime());
+        $attempt->setType($type);
+        $user = $this->detachUser($user);
+        $attempt->setUser($user);
+        $this->getLoginAttemptMapper()->persist($attempt);
+    }
+
+    public function loginAttemptsExceeded($type, $user)
+    {
+        $config = $this->getRateLimitConfig();
+        $ip = $this->sm->get('user_remoteaddress');
+        $since = (new \DateTime())->sub(new \DateInterval('PT' . $config[$type]['lockout_time'] . 'M'));
+        $loginAttemptMapper = $this->getLoginAttemptMapper();
+        if ($loginAttemptMapper->getFailedAttemptCount($since, $type, $ip) > $config[$type]['ip']) {
+            return true;
+        }
+        if ($loginAttemptMapper->getFailedAttemptCount($since, $type, $ip, $user) > $config[$type]['user']) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -209,6 +388,38 @@ class User extends AbstractService
     }
 
     /**
+     * Get the password form.
+     *
+     * @return User\Form\Password Password change form
+     */
+    public function getPasswordForm()
+    {
+        if (!$this->isAllowed('password_change')) {
+            throw new \User\Permissions\NotAllowedException(
+                $this->getTranslator()->translate("You are not allowed to change your password")
+            );
+        }
+
+        return $this->sm->get('user_form_password');
+    }
+
+    /**
+     * Get the password reset form.
+     */
+    public function getPasswordResetForm()
+    {
+        return $this->sm->get('user_form_passwordreset');
+    }
+
+    /**
+     * Get the password activate form.
+     */
+    public function getPasswordActivateForm()
+    {
+        return $this->sm->get('user_form_passwordactivate');
+    }
+
+    /**
      * Get the login form.
      *
      * @return LoginForm Login form
@@ -216,16 +427,6 @@ class User extends AbstractService
     public function getLoginForm()
     {
         return $this->sm->get('user_form_login');
-    }
-
-    /**
-     * Get the logout form.
-     *
-     * @return LogoutForm Logout form
-     */
-    public function getLogoutForm()
-    {
-        return $this->sm->get('user_form_logout');
     }
 
     /**
@@ -259,6 +460,26 @@ class User extends AbstractService
     }
 
     /**
+     * Get the session mapper.
+     *
+     * @return \User\Mapper\Session
+     */
+    public function getSessionMapper()
+    {
+        return $this->sm->get('user_mapper_session');
+    }
+
+    /**
+     * Get the login attempt mapper.
+     *
+     * @return \User\Mapper\LoginAttempt
+     */
+    public function getLoginAttemptMapper()
+    {
+        return $this->sm->get('user_mapper_loginattempt');
+    }
+
+    /**
      * Get the email service.
      *
      * @return EmailService
@@ -266,5 +487,49 @@ class User extends AbstractService
     public function getEmailService()
     {
         return $this->sm->get('user_service_email');
+    }
+
+    /**
+     * Get the auth storage.
+     *
+     * @return User\Authentication\Storage
+     */
+    public function getAuthStorage()
+    {
+        return $this->sm->get('user_auth_storage');
+    }
+
+    /**
+     * Get the rate limit config
+     *
+     * @return array containing the config
+     */
+    public function getRateLimitConfig()
+    {
+        $config = $this->sm->get('config');
+
+        return $config['login_rate_limits'];
+    }
+
+    /**
+     * Get the ACL.
+     *
+     * @return \Zend\Permissions\Acl\Acl
+     */
+    public function getAcl()
+    {
+        return $this->sm->get('acl');
+    }
+
+    /**
+     * Get the default resource ID.
+     *
+     * This is used by {@link isAllowed()} when no resource is specified.
+     *
+     * @return string
+     */
+    protected function getDefaultResourceId()
+    {
+        return 'user';
     }
 }

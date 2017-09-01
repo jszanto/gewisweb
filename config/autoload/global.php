@@ -11,7 +11,7 @@
  * file.
  */
 
-return array(
+return [
     /**
      * Bcrypt cost.
      *
@@ -29,65 +29,134 @@ return array(
     'bcrypt_cost' => 13,
 
     /**
-     * Email configuration.
+     * IP address start for the TU/e. All IP addresses starting with this will
+     * be allowed more base rights, like viewing exams
      */
-    'email' => array(
-        'transport' => 'File',
-        'options' => array(
-            'path' => 'data/mail/'
-        ),
-        'from' => 'web@gewis.nl'
-    ),
+    'tue_range' => '131.155.',
+
+    'login_rate_limits' => [
+        'normal' => [
+            'user' => 10,
+            'ip' => 100,
+            'lockout_time' => 10
+        ],
+        'pin' => [
+            'user' => 5,
+            'ip' => 50,
+            'lockout_time' => 20
+        ],
+    ],
+    'storage' => [
+        'storage_dir' => 'public/data',
+        'public_dir' => 'data',
+        'dir_mode' => 0777, // rwx by default
+    ],
 
     /**
      * Exam and Summary upload directory configration.
      */
-    'education' => array(
+    'education' => [
         'upload_dir' => 'public/data/education',
         'public_dir' => 'data/education',
         'dir_mode' => 0777, // rwx by default
-    ),
-    
+    ],
+
+    /**
+     * Exam and Summary temporary upload directory configration.
+     */
+    'education_temp' => [
+        'upload_exam_dir' => 'public/data/education_temp_exams',
+        'upload_summary_dir' => 'public/data/education_temp_summaries',
+        'public_exam_dir' => 'data/education_temp_exams',
+        'public_summary_dir' => 'data/education_temp_summaries',
+    ],
+
+    /**
+     * Dreamspark configuration.
+     */
+    'dreamspark' => [
+        'url' => 'https://e5.onthehub.com/WebStore/Security/AuthenticateUser.aspx?account=%ACCOUNT%&username=%EMAIL%&key=%KEY%&academic_statuses=%GROUPS%',
+        // configured locally
+        'account' => '',
+        'key' => ''
+    ],
+
+    /**
+     * CA Path for SSL certificates, override this locally if necessary.
+     */
+    'sslcapath' => '/etc/ssl/certs',
+
     /**
      * Photo's upload directory configuration
      */
-    'photo' => array(
+    'photo' => [
         'upload_dir' => 'public/data/photo',
         'public_dir' => 'data/photo',
         'max_photos_page' => 20,
         'dir_mode' => 0777, // rwx by default
-        'small_thumb_size' => array(
-            'width' => 825,
-            'height' => 550
-        ),
-        'large_thumb_size' => array(
-            'width' => 825,
-            'height' => 550
-        ),
-        'album_cover' => array(
-            'width' => 825,
-            'height' => 550,
+        'small_thumb_size' => [
+            /*
+             * Max. width and height which a thumbnail may have. Height param must be greater than width, for
+             * landscape images.
+             */
+            'width' => 320,
+            'height' => 640
+        ],
+        'large_thumb_size' => [
+            /*
+             * Max. width and height which a thumbnail may have.
+             */
+            'width' => 960,
+            'height' => 1920
+        ],
+        'album_cover' => [
+            'width' => 320,
+            'height' => 180,
             'inner_border' => 2,
             'outer_border' => 0,
             'cols' => 2,
             'rows' => 2,
-            'background' => '#000000'
-        ),
-        'face_detect' => array(
+            'background' => '#ffffff'
+        ],
+        'face_detect' => [
             'haarcascades_dir' => 'module/Photo/haarcascades/',
             /*
              * Note: Use with haarcascades from https://github.com/Itseez/opencv/tree/master/data/haarcascades
              * Make sure to use the haarcascades corresponding to your OpenCV version or else it will crash.
              */
-            'haarcascades' => array(
+            'haarcascades' => [
                 'haarcascade_frontalface_alt.xml',
-            ),
+            ],
             'hue_threshold' => 50,
             'saturation_threshold' => 175
-        ),
+        ],
+    ],
 
-    ),
-    
+    'organ_information' => [
+        'cover_width' => 2000,
+        'cover_height' => 625,
+        'thumbnail_width' => 512,
+        'thumbnail_height' => 288,
+    ],
+
+    'frontpage' => [
+        'activity_count' => 3, // Number of activities to display
+        'news_count' => 3, // Number of news items to display
+    ],
+
+    /**
+     * Doctrine global configuration, like functions
+     */
+    'doctrine' => [
+        'configuration' => [
+            'orm_default' => [
+                'numeric_functions' => [
+                    'RAND'  => 'Application\Extensions\Doctrine\Rand'
+                ]
+            ]
+        ]
+    ],
+
     /**
      * OASE SOAP API configuration.
      *
@@ -98,28 +167,28 @@ return array(
      * impracticalities on our side, and a slow OASE at times on the side of
      * Dienst ICT.
      */
-    'oase' => array(
-        'soap' => array(
+    'oase' => [
+        'soap' => [
             'wsdl' => 'http://dlwtbiz.campus.test.tue.nl/ESB/ESB_ESB_DLWO_ESB_ReceivePort.svc?wsdl',
-            'options' => array(
-                'classmap' => array(
+            'options' => [
+                'classmap' => [
                     'Vraag' => 'Education\Oase\Vraag',
                     'Property' => 'Education\Oase\Property',
                     'Antwoord' => 'Education\Oase\Antwoord'
-                ),
+                ],
                 'soap_version' => SOAP_1_1
-            )
-        ),
+            ]
+        ],
         /**
          * Filters for studies
          */
-        'studies' => array(
+        'studies' => [
             /**
              * Studies of W&I will have these keywords.
              *
              * Only studies with these keywords will be considered.
              */
-            'keywords' => array(
+            'keywords' => [
                 "software science",
                 "web science",
                 "wiskunde",
@@ -134,22 +203,22 @@ return array(
                 "security",
                 "business information systems",
                 "embedded systems"
-            ),
+            ],
             /**
              * Negative keywords.
              *
              * Studies with these keywords will not be considered W&I studies.
              */
-            'negative_keywords' => array(
+            'negative_keywords' => [
                 'leraar',
                 'natuurkunde'
-            ),
+            ],
             /**
              * Group ID's.
              *
              * Only studies with these group ID's will be considered.
              */
-            'group_ids' => array(
+            'group_ids' => [
                 100, // diverse masters
                 110, // schakelprogramma's
                 150, // minoren
@@ -157,14 +226,15 @@ return array(
                 200, // bachelor (pre-bachelor-college)
                 210, // regulier onderwijs (incl. master)
                 212, // coherente keuzepakketten wss
-            ),
+                250,
+            ],
             /**
              * Education types
              */
-            'education_types' => array(
+            'education_types' => [
                 'master',
                 'bachelor'
-            )
-        )
-    )
-);
+            ]
+        ]
+    ]
+];
