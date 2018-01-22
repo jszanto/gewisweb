@@ -11,7 +11,7 @@ class MemberController extends AbstractActionController
 
     public function indexAction()
     {
-
+        return new ViewModel(['member' => $this->identity()->getMember()]);
     }
 
     /**
@@ -76,6 +76,20 @@ class MemberController extends AbstractActionController
         $url = $this->getMemberService()->getDreamsparkUrl();
 
         return $this->redirect()->toUrl($url);
+    }
+
+    /**
+     * Action to download regulations.
+     */
+    public function downloadRegulationAction()
+    {
+        $regulation = $this->params("regulation");
+        $response = $this->getMemberService()->getRegulationDownload($regulation);
+        if ($response) {
+            return $response;
+        }
+
+        $this->getResponse()->setStatusCode(404);
     }
 
     /**

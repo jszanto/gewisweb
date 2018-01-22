@@ -125,6 +125,21 @@ class Photo implements ResourceInterface
     protected $faces;
 
     /**
+     * The GPS longitude of the location where the photo was taken.
+     *
+     * @ORM\Column(type="float", nullable=true)
+     */
+    protected $longitude;
+
+    /**
+     * The GPS latitude of the location where the photo was taken.
+     *
+     * @ORM\Column(type="float", nullable=true)
+     */
+    protected $latitude;
+
+
+    /**
      * All the hits of this photo.
      * @ORM\OneToMany(targetEntity="Hit", mappedBy="photo", cascade={"persist", "remove"})
      */
@@ -294,6 +309,26 @@ class Photo implements ResourceInterface
     }
 
     /**
+     * Get the GPS longitude of the location where the photo was taken.
+     *
+     * @return float
+     */
+    public function getLongitude()
+    {
+        return $this->longitude;
+    }
+
+    /**
+     * Get the GPS latitude of the location where the photo was taken.
+     *
+     * @return float
+     */
+    public function getLatitude()
+    {
+        return $this->latitude;
+    }
+
+    /**
      * @return \Photo\Model\Tag
      */
     public function getTags()
@@ -444,9 +479,30 @@ class Photo implements ResourceInterface
      *
      * @param \Photo\Model\Face $face
      */
-    public function addFace($face) {
+    public function addFace($face)
+    {
         $face->setPhoto($this);
         $this->faces[] = $face;
+    }
+
+    /**
+     * Set the GPS longitude of the location where the photo was taken.
+     *
+     * @param float $longitude
+     */
+    public function setLongitude($longitude)
+    {
+        $this->longitude = $longitude;
+    }
+
+    /**
+     * Set the GPS latitude of the location where the photo was taken.
+     *
+     * @param float $latitude
+     */
+    public function setLatitude($latitude)
+    {
+        $this->latitude = $latitude;
     }
 
     /**
@@ -492,7 +548,9 @@ class Photo implements ResourceInterface
             'album' => $this->getAlbum()->toArray(),
             'path' => $this->getPath(),
             'smallThumbPath' => $this->getSmallThumbPath(),
-            'largeThumbPath' => $this->getLargeThumbPath()
+            'largeThumbPath' => $this->getLargeThumbPath(),
+            'longitude' => $this->getLongitude(),
+            'latitude' => $this->getLatitude(),
         ];
 
         return $array;
