@@ -57,7 +57,9 @@ class Admin extends AbstractAclService
                     $config['small_thumb_size']['width'],
                     $config['small_thumb_size']['height']
                 ));
+
                 $photo = $this->getFaceDetectionService()->populateFaces($photo, $config['upload_dir'] . '/' . $photo->getLargeThumbPath());
+
                 if ($move) {
                     unlink($path);
                 }
@@ -95,7 +97,6 @@ class Admin extends AbstractAclService
         $tempFileName = sys_get_temp_dir() . '/ThumbImage' . rand() . '.png';
         $image->writeImage($tempFileName);
         $newPath = $this->getFileStorageService()->storeFile($tempFileName);
-
         return $newPath;
     }
 

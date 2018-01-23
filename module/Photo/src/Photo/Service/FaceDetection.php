@@ -25,17 +25,20 @@ class FaceDetection extends AbstractService
         $faces = array();
         // Detect faces using openCV
         foreach ($config['face_detect']['haarcascades'] as $haarCascade) {
+            var_dump(getcwd() .'/'. $path);
             $faces = array_merge($faces,
-                face_detect($path, getcwd() . '/' . $config['face_detect']['haarcascades_dir'] . $haarCascade));
+                face_detect(getcwd() .'/'. $path, getcwd() . '/' . $config['face_detect']['haarcascades_dir'] . $haarCascade));
         }
 
         // Filter based on color
 
         foreach ($faces as $detectedFace) {
-            echo "FACE";
+
             $face = Face::fromArray($detectedFace);
             if ($this->faceColorCheck($path, $face)) {
                 $photo->addFace($face);
+            } else {
+                echo "Filter";
             }
         }
 
